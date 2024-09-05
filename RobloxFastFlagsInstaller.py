@@ -370,12 +370,12 @@ class Main():
             if forceQuit == True:
                 self.endRoblox()
                 if debug == True: printDebugMessage("Ending Roblox Instances..")
+        def waitForRobloxEnd():
+            if disableRobloxAutoOpen == True:
+                time.sleep(2)
+                if self.getIfRobloxIsOpen():
+                    self.endRoblox()
         if self.__main_os__ == "Darwin":
-            def waitForRobloxEnd():
-                if disableRobloxAutoOpen == True:
-                    time.sleep(2)
-                    if self.getIfRobloxIsOpen():
-                        self.endRoblox()
             if self.getIfRobloxIsOpen(installer=True):
                 if debug == True: printDebugMessage("Installer is already opened. Waiting for installation to end..")
                 while True:
@@ -393,8 +393,19 @@ class Main():
         elif self.__main_os__ == "Windows":
             most_recent_roblox_version_dir = self.getRobloxInstallFolder(f"{windows_dir}\\Versions")
             if most_recent_roblox_version_dir:
-                os.system(f"start {most_recent_roblox_version_dir}RobloxPlayerInstaller.exe")
-                self.printLog("Started Roblox Installer..")
+                if self.getIfRobloxIsOpen(installer=True):
+                    if debug == True: printDebugMessage("Installer is already opened. Waiting for installation to end..")
+                    while True:
+                        if not self.getIfRobloxIsOpen(installer=True):
+                            break
+                        else:
+                            time.sleep(1)
+                    
+                    threading.Thread(target=waitForRobloxEnd).start()
+                else:
+                    if debug == True: printDebugMessage("Running RobloxPlayerInstaller.exe..")
+                    subprocess.run([f"{most_recent_roblox_version_dir}RobloxPlayerInstaller.exe"])
+                    threading.Thread(target=waitForRobloxEnd).start()
             else:
                 self.printLog("Roblox Installer couldn't be found.")
         else:
