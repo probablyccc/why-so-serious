@@ -10,7 +10,7 @@
 3. Use multiple instances directly by launching from your default web browser or by opening the app and selecting generate!
 
 ## Requirements
-1. [Full ZIP file](https://github.com/)
+1. [Full ZIP file](https://github.com/EfazDev/roblox-bootstrap/archive/refs/heads/main.zip)
 2. [Python 3.12](https://www.python.org/downloads/)
 
 ## Install
