@@ -1,8 +1,8 @@
-# <img src="https://github.com/EfazDev/roblox-bootstrap/blob/main/READEMEResources/AppIcon.png?raw=true" width="40" height="40" align="left">Efaz's Roblox Bootstrap
+# <img src="https://github.com/EfazDev/roblox-bootstrap/blob/main/READMEResources/AppIcon.png?raw=true" width="40" height="40" align="left">Efaz's Roblox Bootstrap
 ## Customize your Roblox experience and limitations to a new level!
 
-![Multiple Roblox Instances with Pet Sim Opened](https://github.com/EfazDev/roblox-bootstrap/blob/main/READEMEResources/MultipleInstance.png?raw=true)
-![Subway Surfers Avatar Map](https://github.com/EfazDev/roblox-bootstrap/blob/main/READEMEResources/AvatarEditor.png?raw=true)
+![Multiple Roblox Instances with Pet Sim Opened](https://github.com/EfazDev/roblox-bootstrap/blob/main/READMEResources/MultipleInstance.png?raw=true)
+![Subway Surfers Avatar Map](https://github.com/EfazDev/roblox-bootstrap/blob/main/READMEResources/AvatarEditor.png?raw=true)
 
 ## Features
 1. Set FFlag Customizations on your Roblox installation!
