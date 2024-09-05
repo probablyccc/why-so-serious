@@ -448,7 +448,7 @@ if __name__ == "__main__":
                 fastFlagConfig["EFlagEnableDuplicationOfClients"] = False
                 printDebugMessage("User selected: False")
 
-        printMainMessage("Would you like to enable Debug Mode? (y/n))")
+        printMainMessage("Would you like to enable Debug Mode? (y/n)")
         printYellowMessage("[WARNING! This will expose information like login to Roblox and will reduce speed.]")
         d = input("> ")
         if isYes(d) == True:
