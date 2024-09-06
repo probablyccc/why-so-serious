@@ -23,7 +23,7 @@ if __name__ == "__main__":
     handler = RobloxFastFlagsInstaller.Main()
     loadedJSON = True
     makeAnotherRoblox = False
-    currentVersion = {"version": "1.0.1"}
+    currentVersion = {"version": "1.0.2"}
 
     with open("FastFlagConfiguration.json", "r") as f:
         try:
@@ -745,8 +745,8 @@ if __name__ == "__main__":
                                     if not file.endswith(".json"):
                                         shutil.copy2(src_path, dest_path)
                             printMainMessage("Cleaning up files..")
-                            subprocess.run(["rm", "Update.zip"], check=True)
-                            subprocess.run(["rm", "-r", "./Update/"], check=True)
+                            os.remove("Update.zip")
+                            shutil.rmtree("./Update/")
                             printMainMessage("Running Installer..")
                             subprocess.run(["python3", "Install.py", "--install"], check=True)
                         elif main_os == "Windows":
@@ -762,10 +762,10 @@ if __name__ == "__main__":
                                     if not file.endswith(".json"):
                                         shutil.copy2(src_path, dest_path)
                             printMainMessage("Cleaning up files..")
-                            subprocess.run(["del", "Update.zip"], check=True)
+                            os.remove("Update.zip")
                             shutil.rmtree("./Update/")
                             printMainMessage("Running Installer..")
-                            subprocess.run(["python3", "Install.py", "--install"], check=True)
+                            subprocess.run(["py", "Install.py", "--install"], check=True)
                         printSuccessMessage(f"Update to v{latest_vers['version']} was finished successfully! Please restart this script!")
                         input("> ")
                         exit()
