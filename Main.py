@@ -23,7 +23,7 @@ if __name__ == "__main__":
     handler = RobloxFastFlagsInstaller.Main()
     loadedJSON = True
     makeAnotherRoblox = False
-    currentVersion = {"version": "1.0.2"}
+    currentVersion = {"version": "1.0.3"}
 
     with open("FastFlagConfiguration.json", "r") as f:
         try:

@@ -150,7 +150,7 @@ class Main():
         elif self.__main_os__ == "Windows":
             res = self.getRobloxInstallFolder()
             if res:
-                return {"success": True, "isClientVersion": True, "version": os.path.dirname(res)}
+                return {"success": True, "isClientVersion": True, "version": os.path.basename(os.path.dirname(res))}
             else:
                 return {"success": False, "message": "Roblox not installed."}
         else:
@@ -423,7 +423,7 @@ if __name__ == "__main__":
         printErrorMessage("Please run this script on macOS/Windows.")
         exit()
     printWarnMessage("Made by Efaz from efaz.dev!")
-    printWarnMessage("v1.2.0")
+    printWarnMessage("v1.2.5")
     printWarnMessage("-----------")
     printWarnMessage("Entering Setup..")
     if main_os == "Windows":
