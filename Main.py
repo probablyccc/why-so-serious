@@ -744,11 +744,6 @@ if __name__ == "__main__":
                                 else:
                                     if not file.endswith(".json"):
                                         shutil.copy2(src_path, dest_path)
-                            printMainMessage("Cleaning up files..")
-                            os.remove("Update.zip")
-                            shutil.rmtree("./Update/")
-                            printMainMessage("Running Installer..")
-                            subprocess.run(["python3", "Install.py", "--install"], check=True)
                         elif main_os == "Windows":
                             subprocess.run(["powershell", "-command", f"Expand-Archive -Path 'Update.zip' -DestinationPath './Update/' -Force"], check=True)
                             printMainMessage("Extracted successfully! Filtering out files for update!")
@@ -761,11 +756,9 @@ if __name__ == "__main__":
                                 else:
                                     if not file.endswith(".json"):
                                         shutil.copy2(src_path, dest_path)
-                            printMainMessage("Cleaning up files..")
-                            os.remove("Update.zip")
-                            shutil.rmtree("./Update/")
-                            printMainMessage("Running Installer..")
-                            subprocess.run(["py", "Install.py", "--install"], check=True)
+                        printMainMessage("Cleaning up files..")
+                        os.remove("Update.zip")
+                        shutil.rmtree("./Update/")
                         printSuccessMessage(f"Update to v{latest_vers['version']} was finished successfully! Please restart this script!")
                         input("> ")
                         exit()
