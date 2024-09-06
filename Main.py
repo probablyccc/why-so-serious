@@ -732,22 +732,40 @@ if __name__ == "__main__":
                         printMainMessage("Downloading latest version..")
                         subprocess.run(["curl", "-L", "https://github.com/EfazDev/roblox-bootstrap/archive/refs/heads/main.zip", "-o", "./Update.zip"], check=True)
                         printMainMessage("Downloaded! Extracting ZIP now!")
-                        subprocess.run(["unzip", "-o", "Update.zip", "-d", "./Update/"], check=True)
-                        printMainMessage("Extracted successfully! Filtering out files for update!")
-                        for file in os.listdir("./Update/roblox-bootstrap-main/"):
-                            src_path = os.path.join("./Update/roblox-bootstrap-main/", file)
-                            dest_path = os.path.join("./", file)
-                            
-                            if os.path.isdir(src_path):
-                                shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
-                            else:
-                                if not file.endswith(".json"):
-                                    shutil.copy2(src_path, dest_path)
-                        printMainMessage("Cleaning up files..")
-                        subprocess.run(["rm", "Update.zip"], check=True)
-                        subprocess.run(["rm", "-r", "./Update/"], check=True)
-                        printMainMessage("Running Installer..")
-                        subprocess.run(["python3", "Install.py", "--install"], check=True)
+                        if main_os == "Darwin":
+                            subprocess.run(["unzip", "-o", "Update.zip", "-d", "./Update/"], check=True)
+                            printMainMessage("Extracted successfully! Filtering out files for update!")
+                            for file in os.listdir("./Update/roblox-bootstrap-main/"):
+                                src_path = os.path.join("./Update/roblox-bootstrap-main/", file)
+                                dest_path = os.path.join("./", file)
+                                
+                                if os.path.isdir(src_path):
+                                    shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
+                                else:
+                                    if not file.endswith(".json"):
+                                        shutil.copy2(src_path, dest_path)
+                            printMainMessage("Cleaning up files..")
+                            subprocess.run(["rm", "Update.zip"], check=True)
+                            subprocess.run(["rm", "-r", "./Update/"], check=True)
+                            printMainMessage("Running Installer..")
+                            subprocess.run(["python3", "Install.py", "--install"], check=True)
+                        elif main_os == "Windows":
+                            subprocess.run(["powershell", "-command", f"Expand-Archive -Path 'Update.zip' -DestinationPath './Update/' -Force"], check=True)
+                            printMainMessage("Extracted successfully! Filtering out files for update!")
+                            for file in os.listdir("./Update/roblox-bootstrap-main/"):
+                                src_path = os.path.join("./Update/roblox-bootstrap-main/", file)
+                                dest_path = os.path.join("./", file)
+                                
+                                if os.path.isdir(src_path):
+                                    shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
+                                else:
+                                    if not file.endswith(".json"):
+                                        shutil.copy2(src_path, dest_path)
+                            printMainMessage("Cleaning up files..")
+                            subprocess.run(["del", "Update.zip"], check=True)
+                            shutil.rmtree("./Update/")
+                            printMainMessage("Running Installer..")
+                            subprocess.run(["python3", "Install.py", "--install"], check=True)
                         printSuccessMessage(f"Update to v{latest_vers['version']} was finished successfully! Please restart this script!")
                         input("> ")
                         exit()
