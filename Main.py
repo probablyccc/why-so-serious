@@ -1350,7 +1350,7 @@ if __name__ == "__main__":
                             generated_location = f"{server_info_json['city']}, {server_info_json['region']}, {server_info_json['country']}"
                         else:
                             generated_location = f"{server_info_json['city']}, {server_info_json['country']}"
-                        printSuccessMessage(f"Roblox is successfully connecting to a server in: {generated_location} [{setUDMUXIP}]")
+                        printSuccessMessage(f"Roblox is connecting to a server in: {generated_location} [{setUDMUXIP}]")
                     else:
                         if fastFlagConfig.get("EFlagEnableDebugMode"): printDebugMessage(server_info_res.text)
                         printDebugMessage("Failed to get server information: IP Request resulted with no information.")
