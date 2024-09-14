@@ -19,7 +19,7 @@ Efaz's Roblox Bootstrap is a program inspired by Bloxstrap but using only Python
 ## Requirements
 1. [Full ZIP file](https://github.com/EfazDev/roblox-bootstrap/archive/refs/heads/main.zip)
 2. [Python 3.12](https://www.python.org/downloads/) (You may install from InstallPython.sh)
-3. Python Modules: pypresence requests (For Windows: pip install pypresence requests pywin32, plyer)
+3. Python Modules: pip install pypresence requests (For Windows: pip install pypresence requests pywin32 plyer)
 
 ## Install
 1. Once you got all the requirements, run Install.py and once it says Success, you may use the Bootstrap now!
