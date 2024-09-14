@@ -21,20 +21,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Viewer</string>
-			<key>CFBundleURLName</key>
-			<string>ReplicateRobloxPlayer</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>roblox-player</string>
-				<string>roblox</string>
-				<string>efaz-bootstrap</string>
-			</array>
-		</dict>
-	</array>
+	<array/>
 	<key>CFBundleVersion</key>
 	<string>1.0.0</string>
 	<key>LSApplicationCategoryType</key>
@@ -43,6 +30,8 @@
 	<string>10.9</string>
 	<key>LSMultipleInstancesProhibited</key>
 	<false/>
+	<key>NSAppSleepDisabled</key>
+	<true/>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>
