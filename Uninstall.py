@@ -39,7 +39,7 @@ if __name__ == "__main__":
     printWarnMessage("-----------")
     printWarnMessage("Welcome to Efaz's Roblox Bootstrap Installer!")
     printWarnMessage("Made by Efaz from efaz.dev!")
-    printWarnMessage("v1.1.0")
+    printWarnMessage("v1.1.5")
     printWarnMessage("-----------")
     printMainMessage("Determining System OS..")
     if main_os == "Darwin":

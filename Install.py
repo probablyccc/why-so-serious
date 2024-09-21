@@ -2,6 +2,8 @@ import shutil
 import os
 import platform
 import json
+import subprocess
+import time
 import sys
 
 class pip:
@@ -35,7 +37,6 @@ class pip:
     def pythonInstalled(self):
         import platform
         import os
-        import subprocess
         import glob
         ma_os = platform.system()
         if ma_os == "Darwin":
@@ -117,6 +118,24 @@ def isNo(text):
 def isRequestClose(text):
     return text.lower() == "exit" or text.lower() == "exit()"
 
+def copy_with_symlinks(src, dest):
+    if os.path.lexists(dest):
+        if os.path.isdir(dest) and not os.path.islink(dest):
+            shutil.rmtree(dest)
+        else:
+            os.remove(dest)
+    if os.path.islink(src):
+        linkto = os.readlink(src)
+        os.symlink(linkto, dest)
+    elif os.path.isdir(src):
+        os.makedirs(dest, exist_ok=True)
+        for item in os.listdir(src):
+            s = os.path.join(src, item)
+            d = os.path.join(dest, item)
+            copy_with_symlinks(s, d)
+    else:
+        shutil.copy2(src, dest)
+
 if __name__ == "__main__":
     main_os = platform.system()
     stored_main_app = {
@@ -129,7 +148,7 @@ if __name__ == "__main__":
     printWarnMessage("-----------")
     printWarnMessage("Welcome to Efaz's Roblox Bootstrap Installer!")
     printWarnMessage("Made by Efaz from efaz.dev!")
-    printWarnMessage("v1.1.0")
+    printWarnMessage("v1.1.5")
     printWarnMessage("-----------")
     printMainMessage("Determining System OS..")
     if main_os == "Darwin":
@@ -164,133 +183,160 @@ if __name__ == "__main__":
         overwrited = True
     
     def install():
-        if main_os == "Darwin":
-            printMainMessage("Installing to Applications Folder..")
-            shutil.copytree(f"./Apps/EfazRobloxBootstrap.app", stored_main_app[found_platform][0], dirs_exist_ok=True)
-            shutil.copytree(f"./Apps/EfazRobloxBootstrapLoad.app", stored_main_app[found_platform][1], dirs_exist_ok=True)
-            def ignore_files(dir, files):
-                ignore_list = ["build", "Apps", "GenerateApp.py", "EfazRobloxBootstrap.spec", "FastFlagConfiguration.json", ".git"]
-                return set(ignore_list) & set(files)
-            printMainMessage("Preparing Contents..")
-            if os.path.exists(stored_main_app[found_platform][0]):
-                printMainMessage("Adding App Icon..")
-                shutil.copy(f"AppIcon.icns", f"{stored_main_app[found_platform][0]}/Icon")
-                printMainMessage("Copying Main Resources..")
-                shutil.copytree(f"./", f"{stored_main_app[found_platform][0]}/Contents/Resources/", dirs_exist_ok=True, ignore=ignore_files)
-                printMainMessage("Copying Configuration Files..")
-                if not (os.path.exists(f"{stored_main_app[found_platform][0]}/Contents/Resources/FastFlagConfiguration.json")):
-                    with open(f"FastFlagConfiguration.json", "r") as f:
-                        fastFlagConfig = json.loads(f.read())
-                    fastFlagConfig["EFlagEfazRobloxBootStrapSyncDir"] = os.getcwd()
-                    with open(f"{stored_main_app[found_platform][0]}/Contents/Resources/FastFlagConfiguration.json", "w") as f:
-                        json.dump(fastFlagConfig, f, indent=4)
-                else:
-                    with open(f"{stored_main_app[found_platform][0]}/Contents/Resources/FastFlagConfiguration.json", "r") as f:
-                        fastFlagConfig = json.loads(f.read())
-                    fastFlagConfig["EFlagEfazRobloxBootStrapSyncDir"] = os.getcwd()
-                    with open(f"{stored_main_app[found_platform][0]}/Contents/Resources/FastFlagConfiguration.json", "w") as f:
-                        json.dump(fastFlagConfig, f, indent=4)
-                if overwrited == True:
-                    printSuccessMessage(f"Successfully updated Efaz's Roblox Bootstrap!")
-                else:
-                    printSuccessMessage(f"Successfully installed Efaz's Roblox Bootstrap!")
-            else:
-                printErrorMessage("Something went wrong trying to find the application folder.")
-        elif main_os == "Windows":
-            printMainMessage("Creating paths..")
-            os.makedirs(stored_main_app[found_platform][0], exist_ok=True)
-            disabled_url_schemes = False
-
-            printMainMessage("Installing EXE File..")
-            shutil.copy(os.path.join(os.curdir, "Apps", "EfazRobloxBootstrap", "EfazRobloxBootstrap.exe"), stored_main_app[found_platform][1])
-            shutil.copytree(os.path.join(os.curdir, "Apps", "EfazRobloxBootstrap", "_internal"), os.path.join(stored_main_app[found_platform][0], "_internal"), dirs_exist_ok=True)
-
-            import winreg
-            if instant_install == False:
-                printMainMessage("Would you like to install URL Schemes?")
-                a = input("> ")
-                if not (a.lower() == "n"):
-                    printMainMessage("Setting up URL Schemes..")
-                    def set_url_scheme(protocol, exe_path):
-                        protocol_key = r"Software\Classes\{}".format("")
-                        command_key = r"Software\Classes\{}\shell\open\command".format(protocol)
-
-                        try:
-                            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, protocol_key) as key:
-                                winreg.SetValue(key, "", winreg.REG_SZ, "URL:{}".format(protocol))
-                                winreg.SetValueEx(key, "URL Protocol", 0, winreg.REG_SZ, "")
-                            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, command_key) as key:
-                                winreg.SetValueEx(key, "", 0, winreg.REG_SZ, '"{}" "%1"'.format(exe_path))
-                            printSuccessMessage(f"URL scheme '{protocol}' has been set for '{exe_path}'")
-                        except Exception as e:
-                            printErrorMessage(f"An error occurred: {e}")
-                    set_url_scheme("efaz-bootstrap", stored_main_app[found_platform][1])
-                    set_url_scheme("roblox-player", stored_main_app[found_platform][1])
-                    set_url_scheme("roblox", stored_main_app[found_platform][1])
-                else:
-                    disabled_url_schemes = True
-
-            printMainMessage("Setting up shortcuts..")
-            import win32com.client
-            def create_shortcut(target_path, shortcut_path, working_directory=None, icon_path=None):
-                shell = win32com.client.Dispatch('WScript.Shell')
-                shortcut = shell.CreateShortcut(shortcut_path)
-                shortcut.TargetPath = target_path
-                if working_directory:
-                    shortcut.WorkingDirectory = working_directory
-                if icon_path:
-                    shortcut.IconLocation = icon_path
-                shortcut.save()
-            create_shortcut(stored_main_app[found_platform][1], os.path.join(os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'), 'EfazRobloxBootstrap.lnk'))
-            create_shortcut(stored_main_app[found_platform][1], os.path.join(os.path.join(os.path.join(os.environ['APPDATA']), 'Microsoft', 'Windows', 'Start Menu', 'Programs'), 'EfazRobloxBootstrap.lnk'))
-
-            printMainMessage("Calling Windows to mark program as installed.")
-            app_key = "Software\\EfazRobloxBootstrap"
-            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, app_key) as key:
-                winreg.SetValueEx(key, "InstallPath", 0, winreg.REG_SZ, stored_main_app[found_platform][0])
-                winreg.SetValueEx(key, "Installed", 0, winreg.REG_DWORD, 1)
-
-            registry_path = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\EfazRobloxBootstrap"
-            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, registry_path) as key:
-                winreg.SetValueEx(key, "UninstallString", 0, winreg.REG_SZ, f"py {os.path.join(stored_main_app[found_platform][0], "Uninstall.py")}")
-                winreg.SetValueEx(key, "DisplayName", 0, winreg.REG_SZ, "Efaz's Roblox Bootstrap")
-                winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, "1.1.0")
-                winreg.SetValueEx(key, "DisplayIcon", 0, winreg.REG_SZ, os.path.join(stored_main_app[found_platform][0], "AppIcon.ico"))
-
-            printMainMessage("Copying App Resources..")
-            def ignore_files(dir, files):
-                ignore_list = ["build", "Apps", "GenerateApp.py", "EfazRobloxBootstrap.spec", "_internal", "FastFlagConfiguration.json", ".git"]
-                return set(ignore_list) & set(files)
-            if os.path.exists(stored_main_app[found_platform][1]):
-                shutil.copytree(os.curdir, stored_main_app[found_platform][0], dirs_exist_ok=True, ignore=ignore_files)
-                printMainMessage("Copying Configuration Files..")
-                if not (os.path.exists(os.path.join(f"{stored_main_app[found_platform][0]}", "FastFlagConfiguration.json"))):
-                    with open(f"FastFlagConfiguration.json", "r") as f:
-                        fastFlagConfig = json.loads(f.read())
-                    if disabled_url_schemes == True:
-                        fastFlagConfig["EFlagDisableURLSchemeInstall"] = True
+        if os.path.exists("./Apps/"):
+            if main_os == "Darwin":
+                deleted_other_os = False
+                arch = "Mac"
+                if deleted_other_os == True:
+                    printMainMessage("To help save space, the script has automatically deleted apps for other operating systems!")
+                if os.path.exists(f"./Apps/EfazRobloxBootstrap{arch}.zip"):
+                    printMainMessage("Exporting ZIP File to Apps Folder..")
+                    try:
+                        subprocess.run(["unzip", "-o", f"./Apps/EfazRobloxBootstrap{arch}.zip", "-d", f"./Apps/EfazRobloxBootstrap{arch}"], check=True)
+                    except Exception as e:
+                        printSuccessMessage("Unzipped!")
+                    time.sleep(1)
+                if os.path.exists(f"./Apps/EfazRobloxBootstrap{arch}/"):
+                    if os.path.exists("/Applications/EfazRobloxBootstrap.app/Frameworks/"):
+                        printMainMessage("Clearing Python Frameworks for Main App..")
+                        shutil.rmtree("/Applications/EfazRobloxBootstrap.app/Frameworks/")
+                    if os.path.exists("/Applications/EfazRobloxBootstrapLoader.app/Frameworks/"):
+                        printMainMessage("Clearing Python Frameworks for Loader App..")
+                        shutil.rmtree("/Applications/EfazRobloxBootstrapLoader.app/Frameworks/")
+                    printMainMessage("Installing to Applications Folder..")
+                    copy_with_symlinks(f"./Apps/EfazRobloxBootstrap{arch}/Apps/EfazRobloxBootstrap.app", stored_main_app[found_platform][0])
+                    copy_with_symlinks(f"./Apps/EfazRobloxBootstrap{arch}/Apps/EfazRobloxBootstrapLoad.app", stored_main_app[found_platform][1])
+                    def ignore_files(dir, files):
+                        ignore_list = ["build", "Apps", "GenerateApp.py", "EfazRobloxBootstrap.spec", "FastFlagConfiguration.json", ".git"]
+                        return set(ignore_list) & set(files)
+                    printMainMessage("Preparing Contents..")
+                    if os.path.exists(stored_main_app[found_platform][0]):
+                        printMainMessage("Adding App Icon..")
+                        shutil.copy(f"AppIcon.icns", f"{stored_main_app[found_platform][0]}/Icon")
+                        printMainMessage("Copying Main Resources..")
+                        shutil.copytree(f"./", f"{stored_main_app[found_platform][0]}/Contents/Resources/", dirs_exist_ok=True, ignore=ignore_files, symlinks=True)
+                        printMainMessage("Copying Configuration Files..")
+                        if not (os.path.exists(f"{stored_main_app[found_platform][0]}/Contents/Resources/FastFlagConfiguration.json")):
+                            with open(f"FastFlagConfiguration.json", "r") as f:
+                                fastFlagConfig = json.loads(f.read())
+                            fastFlagConfig["EFlagEfazRobloxBootStrapSyncDir"] = os.getcwd()
+                            with open(f"{stored_main_app[found_platform][0]}/Contents/Resources/FastFlagConfiguration.json", "w") as f:
+                                json.dump(fastFlagConfig, f, indent=4)
+                        else:
+                            with open(f"{stored_main_app[found_platform][0]}/Contents/Resources/FastFlagConfiguration.json", "r") as f:
+                                fastFlagConfig = json.loads(f.read())
+                            fastFlagConfig["EFlagEfazRobloxBootStrapSyncDir"] = os.getcwd()
+                            with open(f"{stored_main_app[found_platform][0]}/Contents/Resources/FastFlagConfiguration.json", "w") as f:
+                                json.dump(fastFlagConfig, f, indent=4)
+                        if overwrited == True:
+                            printSuccessMessage(f"Successfully updated Efaz's Roblox Bootstrap!")
+                        else:
+                            printSuccessMessage(f"Successfully installed Efaz's Roblox Bootstrap!")
                     else:
-                        fastFlagConfig["EFlagDisableURLSchemeInstall"] = False
-                    fastFlagConfig["EFlagEfazRobloxBootStrapSyncDir"] = os.getcwd()
-                    with open(os.path.join(f"{stored_main_app[found_platform][0]}", "FastFlagConfiguration.json"), "w") as f:
-                        json.dump(fastFlagConfig, f, indent=4)
-                else:
-                    with open(os.path.join(f"{stored_main_app[found_platform][0]}", "FastFlagConfiguration.json"), "r") as f:
-                        fastFlagConfig = json.loads(f.read())
-                    if disabled_url_schemes == True:
-                        fastFlagConfig["EFlagDisableURLSchemeInstall"] = True
-                    else:
-                        fastFlagConfig["EFlagDisableURLSchemeInstall"] = False
-                    fastFlagConfig["EFlagEfazRobloxBootStrapSyncDir"] = os.getcwd()
-                    with open(os.path.join(f"{stored_main_app[found_platform][0]}", "FastFlagConfiguration.json"), "w") as f:
-                        json.dump(fastFlagConfig, f, indent=4)
-                if overwrited == True:
-                    printSuccessMessage(f"Successfully updated Efaz's Roblox Bootstrap!")
-                else:
-                    printSuccessMessage(f"Successfully installed Efaz's Roblox Bootstrap!")
-            else:
-                printErrorMessage("Something went wrong trying to find the installation folder.")
+                        printErrorMessage("Something went wrong trying to find the application folder.")
+                    shutil.rmtree(f"./Apps/EfazRobloxBootstrap{arch}/")
+            elif main_os == "Windows":
+                deleted_other_os = False
+                if os.path.exists("./Apps/EfazRobloxBootstrapMac.zip"):
+                    os.remove("./Apps/EfazRobloxBootstrapMac.zip")
+                    deleted_other_os = True
+                if deleted_other_os == True:
+                    printMainMessage("To help save space, the script has automatically deleted apps for other operating systems!")
+                printMainMessage("Creating paths..")
+                os.makedirs(stored_main_app[found_platform][0], exist_ok=True)
+                disabled_url_schemes = False
 
+                printMainMessage("Installing EXE File..")
+                shutil.copy(os.path.join(os.curdir, "Apps", "EfazRobloxBootstrap", "EfazRobloxBootstrap.exe"), stored_main_app[found_platform][1])
+                shutil.copytree(os.path.join(os.curdir, "Apps", "EfazRobloxBootstrap", "_internal"), os.path.join(stored_main_app[found_platform][0], "_internal"), dirs_exist_ok=True)
+
+                import winreg
+                if instant_install == False:
+                    printMainMessage("Would you like to install URL Schemes?")
+                    a = input("> ")
+                    if not (a.lower() == "n"):
+                        printMainMessage("Setting up URL Schemes..")
+                        def set_url_scheme(protocol, exe_path):
+                            protocol_key = r"Software\Classes\{}".format("")
+                            command_key = r"Software\Classes\{}\shell\open\command".format(protocol)
+
+                            try:
+                                with winreg.CreateKey(winreg.HKEY_CURRENT_USER, protocol_key) as key:
+                                    winreg.SetValue(key, "", winreg.REG_SZ, "URL:{}".format(protocol))
+                                    winreg.SetValueEx(key, "URL Protocol", 0, winreg.REG_SZ, "")
+                                with winreg.CreateKey(winreg.HKEY_CURRENT_USER, command_key) as key:
+                                    winreg.SetValueEx(key, "", 0, winreg.REG_SZ, '"{}" "%1"'.format(exe_path))
+                                printSuccessMessage(f"URL scheme '{protocol}' has been set for '{exe_path}'")
+                            except Exception as e:
+                                printErrorMessage(f"An error occurred: {e}")
+                        set_url_scheme("efaz-bootstrap", stored_main_app[found_platform][1])
+                        set_url_scheme("roblox-player", stored_main_app[found_platform][1])
+                        set_url_scheme("roblox", stored_main_app[found_platform][1])
+                    else:
+                        disabled_url_schemes = True
+
+                printMainMessage("Setting up shortcuts..")
+                import win32com.client
+                def create_shortcut(target_path, shortcut_path, working_directory=None, icon_path=None):
+                    shell = win32com.client.Dispatch('WScript.Shell')
+                    shortcut = shell.CreateShortcut(shortcut_path)
+                    shortcut.TargetPath = target_path
+                    if working_directory:
+                        shortcut.WorkingDirectory = working_directory
+                    if icon_path:
+                        shortcut.IconLocation = icon_path
+                    shortcut.save()
+                create_shortcut(stored_main_app[found_platform][1], os.path.join(os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'), 'EfazRobloxBootstrap.lnk'))
+                create_shortcut(stored_main_app[found_platform][1], os.path.join(os.path.join(os.path.join(os.environ['APPDATA']), 'Microsoft', 'Windows', 'Start Menu', 'Programs'), 'EfazRobloxBootstrap.lnk'))
+
+                printMainMessage("Calling Windows to mark program as installed.")
+                app_key = "Software\\EfazRobloxBootstrap"
+                with winreg.CreateKey(winreg.HKEY_CURRENT_USER, app_key) as key:
+                    winreg.SetValueEx(key, "InstallPath", 0, winreg.REG_SZ, stored_main_app[found_platform][0])
+                    winreg.SetValueEx(key, "Installed", 0, winreg.REG_DWORD, 1)
+
+                registry_path = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\EfazRobloxBootstrap"
+                with winreg.CreateKey(winreg.HKEY_CURRENT_USER, registry_path) as key:
+                    winreg.SetValueEx(key, "UninstallString", 0, winreg.REG_SZ, f"py {os.path.join(stored_main_app[found_platform][0], "Uninstall.py")}")
+                    winreg.SetValueEx(key, "DisplayName", 0, winreg.REG_SZ, "Efaz's Roblox Bootstrap")
+                    winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, "1.1.5")
+                    winreg.SetValueEx(key, "DisplayIcon", 0, winreg.REG_SZ, os.path.join(stored_main_app[found_platform][0], "AppIcon.ico"))
+
+                printMainMessage("Copying App Resources..")
+                def ignore_files(dir, files):
+                    ignore_list = ["build", "Apps", "GenerateApp.py", "EfazRobloxBootstrap.spec", "_internal", "FastFlagConfiguration.json", ".git"]
+                    return set(ignore_list) & set(files)
+                if os.path.exists(stored_main_app[found_platform][1]):
+                    shutil.copytree(os.curdir, stored_main_app[found_platform][0], dirs_exist_ok=True, ignore=ignore_files)
+                    printMainMessage("Copying Configuration Files..")
+                    if not (os.path.exists(os.path.join(f"{stored_main_app[found_platform][0]}", "FastFlagConfiguration.json"))):
+                        with open(f"FastFlagConfiguration.json", "r") as f:
+                            fastFlagConfig = json.loads(f.read())
+                        if disabled_url_schemes == True:
+                            fastFlagConfig["EFlagDisableURLSchemeInstall"] = True
+                        else:
+                            fastFlagConfig["EFlagDisableURLSchemeInstall"] = False
+                        fastFlagConfig["EFlagEfazRobloxBootStrapSyncDir"] = os.getcwd()
+                        with open(os.path.join(f"{stored_main_app[found_platform][0]}", "FastFlagConfiguration.json"), "w") as f:
+                            json.dump(fastFlagConfig, f, indent=4)
+                    else:
+                        with open(os.path.join(f"{stored_main_app[found_platform][0]}", "FastFlagConfiguration.json"), "r") as f:
+                            fastFlagConfig = json.loads(f.read())
+                        if disabled_url_schemes == True:
+                            fastFlagConfig["EFlagDisableURLSchemeInstall"] = True
+                        else:
+                            fastFlagConfig["EFlagDisableURLSchemeInstall"] = False
+                        fastFlagConfig["EFlagEfazRobloxBootStrapSyncDir"] = os.getcwd()
+                        with open(os.path.join(f"{stored_main_app[found_platform][0]}", "FastFlagConfiguration.json"), "w") as f:
+                            json.dump(fastFlagConfig, f, indent=4)
+                    if overwrited == True:
+                        printSuccessMessage(f"Successfully updated Efaz's Roblox Bootstrap!")
+                    else:
+                        printSuccessMessage(f"Successfully installed Efaz's Roblox Bootstrap!")
+                else:
+                    printErrorMessage("Something went wrong trying to find the installation folder.")
+        else:
+            printErrorMessage("There was an issue while finding the Apps folder for installation.")
     if len(sys.argv) > 1:
         if sys.argv[1] == "--install":
             instant_install = True

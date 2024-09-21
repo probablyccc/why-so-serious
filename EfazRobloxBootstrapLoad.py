@@ -1,7 +1,6 @@
 import sys
 import os
 import subprocess
-import json
 import platform
 
 def printMainMessage(mes):
@@ -22,7 +21,7 @@ def printDebugMessage(mes):
 printWarnMessage("-----------")
 printWarnMessage("Welcome to Efaz's Roblox Bootstrap Loader!")
 printWarnMessage("Made by Efaz from efaz.dev!")
-printWarnMessage("v1.1.0")
+printWarnMessage("v1.1.5")
 printWarnMessage("-----------")
 printMainMessage("Determining System OS..")
 main_os = platform.system()

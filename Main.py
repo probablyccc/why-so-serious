@@ -4,9 +4,11 @@ import json
 import sys
 import platform
 import datetime
+import importlib.util
 import subprocess
 import threading
 import time
+from urllib.parse import unquote
 import RobloxFastFlagsInstaller
 
 class pip:
@@ -68,32 +70,25 @@ class pip:
             return False
     def pythonInstall(self):
         import platform
-        import requests
         import subprocess
         import tempfile
 
         ma_os = platform.system()
         if ma_os == "Darwin":
             url = "https://www.python.org/ftp/python/3.12.5/python-3.12.5-macos11.pkg"
-            response = requests.get(url)
-            
-            if response.status_code == 200:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pkg") as pkg_file:
-                    pkg_file.write(response.content)
-                    pkg_file_path = pkg_file.name
+            pkg_file_path = tempfile.mktemp(suffix=".pkg")
+            result = subprocess.run(["curl", "-o", pkg_file_path, url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)            
+            if result.returncode == 0:
                 subprocess.run(["open", pkg_file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                 print(f"Python installer has been executed: {pkg_file_path}")
             else:
                 print("Failed to download Python installer.")
         elif ma_os == "Windows":
-            url = "https://www.python.org/ftp/python/3.12.5/python-3.12.5-amd64.exe"
-            response = requests.get(url)
-            
-            if response.status_code == 200:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".exe") as exe_file:
-                    exe_file.write(response.content)
-                    exe_file_path = exe_file.name
-                subprocess.run([exe_file_path], check=True)
+            url = "https://www.python.org/ftp/python/3.12.5/python-3.12.5.exe"
+            exe_file_path = tempfile.mktemp(suffix=".exe")
+            result = subprocess.run(["curl", "-o", exe_file_path, url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)            
+            if result.returncode == 0:
+                subprocess.run(["open", exe_file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                 print(f"Python installer has been executed: {exe_file_path}")
             else:
                 print("Failed to download Python installer.")
@@ -114,7 +109,7 @@ if __name__ == "__main__":
     handler = RobloxFastFlagsInstaller.Main()
     loadedJSON = True
     makeAnotherRoblox = False
-    currentVersion = {"version": "1.1.0"}
+    currentVersion = {"version": "1.1.5"}
     given_args = list(filter(None, sys.argv))
 
     with open("FastFlagConfiguration.json", "r") as f:
@@ -167,6 +162,24 @@ if __name__ == "__main__":
         else:
             printDebugMessage(f"File not found: {pa}")
             return None
+    
+    def readJSONFile(path, listExpected=False):
+        with open(path, "r") as f:
+            try:
+                main_content = json.load(f)
+                if listExpected == True:
+                    if type(main_content) is list:
+                        return main_content
+                    else:
+                        return None
+                else:
+                    if type(main_content) is dict:
+                        return main_content
+                    else:
+                        return None
+            except Exception as e:
+                return None
+        return None
     
     os.system("cls" if os.name == "nt" else "clear")
     if main_os == "Windows":
@@ -265,37 +278,52 @@ if __name__ == "__main__":
         printMainMessage("Would you like to use a Mod Mode? (y/n)")
         b = input("> ")
         if isYes(b) == True:
+            mode_jsons = {}
             fastFlagConfig["EFlagEnableModModes"] = True
             def scan_name(a):
                 if main_os == "Windows":
-                    if os.path.exists(f"{os.path.curdir}\\ModModes\\{a}\\"):
+                    if os.path.exists(f"{os.path.curdir}\\ModModes\\{a}\\") and os.path.exists(f"{os.path.curdir}\\ModModes\\{a}\\Manifest.json"):
                         return True
                     else:
                         return False
                 elif main_os == "Darwin":
-                    if os.path.exists(f"{os.path.curdir}/ModModes/{a}/"):
+                    if os.path.exists(f"{os.path.curdir}/ModModes/{a}/") and os.path.exists(f"{os.path.curdir}/ModModes/{a}/Manifest.json"):
                         return True
                     else:
                         return False
             def getName():
-                got_set = []
+                unfiltered_got_mode = []
+                got_mode = []
                 for i in os.listdir("./ModModes/"):
-                    if os.path.isdir(f"./ModModes/{i}/"):
-                        got_set.append(i)
+                    if os.path.isdir(f"./ModModes/{i}/") and os.path.exists(f"./ModModes/{i}/Manifest.json"):
+                        unfiltered_got_mode.append(i)
                 printWarnMessage("Select the number that is associated with the mod you want to use.")
-                got_set = sorted(got_set)
+                unfiltered_got_mode = sorted(unfiltered_got_mode)
                 count = 1
-                for i in got_set:
-                    printMainMessage(f"[{str(count)}] = {i}")
+                for i in unfiltered_got_mode:
+                    res_json = readJSONFile(f"./ModModes/{i}/Manifest.json")
+                    if res_json:
+                        final_vers = "1.0.0"
+                        if res_json.get("version"):
+                            if type(res_json.get("version")) is str and len(res_json.get("version")) < 10:
+                                final_vers = res_json.get("version")
+                        got_mode.append(i)
+                        mode_jsons[i] = res_json
+                        if res_json.get("name") == i:
+                            printMainMessage(f"[{str(count)}] = {i} [v{final_vers}]")
+                        elif type(res_json.get("name")) is str:
+                            printMainMessage(f"[{str(count)}] = {res_json.get('name')} [v{final_vers}] [{i}]")
+                        else:
+                            printMainMessage(f"[{str(count)}] = {i} [v{final_vers}]")
                     count += 1
                 if main_os == "Darwin":
                     printYellowMessage("[Also, if you just added a new mod folder into the ModModes folder, please rerun Install.py in order for it to seen.]")
                 a = input("> ")
                 if a.isnumeric():
                     c = int(a)-1
-                    if c < len(got_set) and c >= 0:
-                        if got_set[c]:
-                            b = got_set[c]
+                    if c < len(got_mode) and c >= 0:
+                        if got_mode[c]:
+                            b = got_mode[c]
                             if scan_name(b) == True:
                                 return b
                             else:
@@ -310,9 +338,71 @@ if __name__ == "__main__":
                 else:
                     printDebugMessage("User gave a response which is not a number.")
                     return "Original"
-            set_icon_set = getName()
-            fastFlagConfig["EFlagSelectedModMode"] = set_icon_set
-            printSuccessMessage(f"Set icon set: {set_icon_set}")
+            set_mod_mode = getName()
+            if not (fastFlagConfig.get("EFlagSelectedModMode") == None or fastFlagConfig.get("EFlagSelectedModMode") == "Original") and set_mod_mode == "Original":
+                fastFlagConfig["EFlagModModeAllowedDetectments"] = []
+                fastFlagConfig["EFlagEnableModModeScripts"] = False
+                printMainMessage("It seems like you have defaulted the current mod mode to Original! Would you like to reinstall Roblox to clear previous mods?")
+                a = input("> ")
+                if isYes(a) == True:
+                    handler.installRoblox()
+            elif os.path.exists(os.path.join(os.path.curdir, "ModModes", set_mod_mode, "Manifest.json")):
+                res_json = readJSONFile(f"./ModModes/{set_mod_mode}/Manifest.json")
+                if res_json:
+                    if (not (fastFlagConfig.get("EFlagAllowActivityTracking") == True) or (fastFlagConfig.get("EFlagAllowActivityTracking") == None)) and (res_json.get("mod_script") == True):
+                        printMainMessage("Would you like to allow Activity Tracking on the Roblox client? (y/n)")
+                        printMainMessage("This will allow features like:")
+                        printMainMessage("- Server Locations")
+                        printMainMessage("- Discord Webhook")
+                        printMainMessage("- BloxstrapRPC")
+                        printMainMessage("- Discord Presence")
+                        printMainMessage("- Mod Mode Scripts")
+                        d = input("> ")
+                        if isYes(d) == True:
+                            fastFlagConfig["EFlagAllowActivityTracking"] = True
+                            printDebugMessage("User selected: True")
+                        elif isNo(d) == True:
+                            fastFlagConfig["EFlagAllowActivityTracking"] = False
+                            printDebugMessage("User selected: False")
+                    if res_json.get("mod_script") == True and os.path.exists(os.path.join(os.path.curdir, "ModModes", set_mod_mode, "ModScript.py")) and fastFlagConfig.get("EFlagAllowActivityTracking") == True:
+                        printMainMessage("It seems like this mod mode contains a script enabled. Would you like to enable it with Activity Tracking? (y/n)")
+                        if type(res_json.get("mod_script_requirements")) is list:
+                            printMainMessage("You will enable the following for this item: ")
+                            for i in res_json.get("mod_script_requirements"):
+                                if type(i) is str and handler.robloxInstanceInfoNames.get(i):
+                                    mai = handler.robloxInstanceInfoNames.get(i)
+                                    if "Allow detecting every Roblox event" in mai:
+                                        printErrorMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
+                                    elif "Allow detecting when Roblox HttpResponses are ran" in mai or "Allow detecting when Unknown Roblox Handlers are detected" in mai:
+                                        printWarnMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
+                                    elif "Allow getting Job ID, Place ID and Roblox IP" in mai or "Allow detecting when loading " in mai:
+                                        printYellowMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
+                                    else:
+                                        printMainMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
+                                else:
+                                    printErrorMessage(f"- Unknown Requirement")
+                        printWarnMessage("PLEASE CHECK THE SCRIPT BEFORE ENABLING! DON'T ENABLE IF YOU DON'T KNOW WHAT YOU'RE DOING!!")
+                        a = input("> ")
+                        if isYes(a) == True:
+                            if type(res_json.get("mod_script_requirements")) is list:
+                                fastFlagConfig["EFlagModModeAllowedDetectments"] = res_json.get("mod_script_requirements")
+                            else:
+                                fastFlagConfig["EFlagModModeAllowedDetectments"] = []
+                            fastFlagConfig["EFlagEnableModModeScripts"] = True
+                        else:
+                            fastFlagConfig["EFlagModModeAllowedDetectments"] = []
+                            fastFlagConfig["EFlagEnableModModeScripts"] = False
+                    else:
+                        fastFlagConfig["EFlagModModeAllowedDetectments"] = []
+                        fastFlagConfig["EFlagEnableModModeScripts"] = False
+                else:
+                    fastFlagConfig["EFlagModModeAllowedDetectments"] = []
+                    fastFlagConfig["EFlagEnableModModeScripts"] = False
+            else:
+                fastFlagConfig["EFlagModModeAllowedDetectments"] = []
+                fastFlagConfig["EFlagEnableModModeScripts"] = False
+            fastFlagConfig["EFlagSelectedModMode"] = set_mod_mode
+            printSuccessMessage(f"Set mod mode: {set_mod_mode}")
         elif isNo(b) == True:
             fastFlagConfig["EFlagEnableModModes"] = False
             printDebugMessage("User selected: False")
@@ -552,58 +642,117 @@ if __name__ == "__main__":
                 fastFlagConfig["EFlagEnableDuplicationOfClients"] = False
                 printDebugMessage("User selected: False")
 
-        printMainMessage("Would you like to enable Server Locations? (y/n)")
+        printMainMessage("Would you like to allow Activity Tracking on the Roblox client? (y/n)")
+        printMainMessage("This will allow features like:")
+        printMainMessage("- Server Locations")
+        printMainMessage("- Discord Webhook")
+        printMainMessage("- BloxstrapRPC")
+        printMainMessage("- Discord Presence")
+        printMainMessage("- Mod Mode Scripts")
         d = input("> ")
         if isYes(d) == True:
-            fastFlagConfig["EFlagNotifyServerLocation"] = True
+            fastFlagConfig["EFlagAllowActivityTracking"] = True
             printDebugMessage("User selected: True")
         elif isNo(d) == True:
-            fastFlagConfig["EFlagNotifyServerLocation"] = False
+            fastFlagConfig["EFlagAllowActivityTracking"] = False
             printDebugMessage("User selected: False")
 
-        printMainMessage("Would you like to enable Discord RPC? (extra modules may be installed when said yes) (y/n)")
-        d = input("> ")
-        if isYes(d) == True:
-            fastFlagConfig["EFlagEnableDiscordRPC"] = True
-            try:
-                from DiscordPresenceHandler import Presence
-                import requests
-            except Exception as e:
-                pip().install(["pypresence", "requests"])
-                from DiscordPresenceHandler import Presence
-                import requests
-                printSuccessMessage("Successfully installed presence modules!")
-            printDebugMessage("User selected: True")
-            printMainMessage("Would you like to enable joining from your Discord profile? (Everyone will be allowed to join depending on type of server.)")
+        if not (fastFlagConfig.get("EFlagAllowActivityTracking") == False):
+            printMainMessage("Would you like to enable Server Locations? (y/n)")
             d = input("> ")
             if isYes(d) == True:
-                fastFlagConfig["EFlagEnableDiscordRPCJoining"] = True
+                fastFlagConfig["EFlagNotifyServerLocation"] = True
                 printDebugMessage("User selected: True")
+            elif isNo(d) == True:
+                fastFlagConfig["EFlagNotifyServerLocation"] = False
+                printDebugMessage("User selected: False")
+
+            printMainMessage("Would you like to enable Discord RPC? (extra modules may be installed when said yes) (y/n)")
+            d = input("> ")
+            if isYes(d) == True:
+                fastFlagConfig["EFlagEnableDiscordRPC"] = True
+                try:
+                    from DiscordPresenceHandler import Presence
+                    import requests
+                except Exception as e:
+                    pip().install(["pypresence", "requests"])
+                    from DiscordPresenceHandler import Presence
+                    import requests
+                    printSuccessMessage("Successfully installed presence modules!")
+                printDebugMessage("User selected: True")
+                printMainMessage("Would you like to enable joining from your Discord profile? (Everyone will be allowed to join depending on type of server.)")
+                d = input("> ")
+                if isYes(d) == True:
+                    fastFlagConfig["EFlagEnableDiscordRPCJoining"] = True
+                    printDebugMessage("User selected: True")
+                elif isNo(d) == True:
+                    fastFlagConfig["EFlagEnableDiscordRPCJoining"] = False
+                    printDebugMessage("User selected: False")
             elif isNo(d) == True:
                 fastFlagConfig["EFlagEnableDiscordRPCJoining"] = False
-                printDebugMessage("User selected: False")
-        elif isNo(d) == True:
-            fastFlagConfig["EFlagEnableDiscordRPCJoining"] = False
-            fastFlagConfig["EFlagEnableDiscordRPC"] = False
-            printDebugMessage("User selected: False")
-
-        if fastFlagConfig.get("EFlagEnableDiscordRPC") == True:
-            printMainMessage("Would you like to enable games to use the Bloxstrap SDK? (y/n)")
-            d = input("> ")
-            if isYes(d) == True:
-                fastFlagConfig["EFlagAllowBloxstrapSDK"] = True
-                printDebugMessage("User selected: True")
-            elif isNo(d) == True:
-                fastFlagConfig["EFlagAllowBloxstrapSDK"] = False
+                fastFlagConfig["EFlagEnableDiscordRPC"] = False
                 printDebugMessage("User selected: False")
 
-            printMainMessage("Would you like to enable access to private servers you connect to from Discord Presences? (users may be able to join or not) (y/n)")
+            if fastFlagConfig.get("EFlagEnableDiscordRPC") == True:
+                printMainMessage("Would you like to enable games to use the Bloxstrap SDK? (y/n)")
+                d = input("> ")
+                if isYes(d) == True:
+                    fastFlagConfig["EFlagAllowBloxstrapSDK"] = True
+                    printDebugMessage("User selected: True")
+                elif isNo(d) == True:
+                    fastFlagConfig["EFlagAllowBloxstrapSDK"] = False
+                    printDebugMessage("User selected: False")
+
+                printMainMessage("Would you like to enable access to private servers you connect to from Discord Presences? (users may be able to join or not) (y/n)")
+                d = input("> ")
+                if isYes(d) == True:
+                    fastFlagConfig["EFlagAllowPrivateServerJoining"] = True
+                    printDebugMessage("User selected: True")
+                elif isNo(d) == True:
+                    fastFlagConfig["EFlagAllowPrivateServerJoining"] = False
+                    printDebugMessage("User selected: False")
+
+            printMainMessage("Would you like to use a Discord Webhook? (link required) (y/n)")
             d = input("> ")
             if isYes(d) == True:
-                fastFlagConfig["EFlagAllowPrivateServerJoining"] = True
+                fastFlagConfig["EFlagUseDiscordWebhook"] = True
+                try:
+                    import requests
+                except Exception as e:
+                    pip().install(["requests"])
+                    import requests
                 printDebugMessage("User selected: True")
+                printMainMessage("Please enter your Discord Webhook Link here (https://discord.com/api/webhooks/XXXXXXX/XXXXXXX): ")
+                d = input("> ")
+                if d.startswith("https://discord.com/api/webhooks/"):
+                    printDebugMessage("URL passed test.")
+                    fastFlagConfig["EFlagDiscordWebhookURL"] = d
+                    printMainMessage("Enter your Discord User ID (you may need Developer Mode in order to copy):")
+                    d = input("> ")
+                    if d.isnumeric():
+                        fastFlagConfig["EFlagDiscordWebhookUserId"] = d
+                        printMainMessage("When should this Discord Webhook be notified?")
+                        printMainMessage("It should be notified when I join a Roblox server. (y/n)")
+                        d = input("> ")
+                        if isYes(d) == True:
+                            fastFlagConfig["EFlagDiscordWebhookConnect"] = True
+                            printDebugMessage("User selected: True")
+                        elif isNo(d) == True:
+                            fastFlagConfig["EFlagDiscordWebhookConnect"] = False
+                            printDebugMessage("User selected: False")
+                        printMainMessage("It should be notified when I disconnect from a server. (y/n)")
+                        d = input("> ")
+                        if isYes(d) == True:
+                            fastFlagConfig["EFlagDiscordWebhookDisconnect"] = True
+                            printDebugMessage("User selected: True")
+                        elif isNo(d) == True:
+                            fastFlagConfig["EFlagDiscordWebhookDisconnect"] = False
+                            printDebugMessage("User selected: False")
+                else:
+                    fastFlagConfig["EFlagUseDiscordWebhook"] = False
+                    printErrorMessage("The provided webhook link is not a valid format.")
             elif isNo(d) == True:
-                fastFlagConfig["EFlagAllowPrivateServerJoining"] = False
+                fastFlagConfig["EFlagUseDiscordWebhook"] = False
                 printDebugMessage("User selected: False")
 
         printMainMessage("Would you like to enable Debug Mode? (y/n)")
@@ -729,7 +878,9 @@ if __name__ == "__main__":
         printMainMessage("2. Old Death Sound and Cursors were sourced from \033[38;5;165mBloxstrap files (https://github.com/pizzaboxer/bloxstrap)\033[0m")
         printMainMessage("3. AvatarEditorMaps were from \033[38;5;197mMielesgames's Map Files (https://github.com/Mielesgames/RobloxAvatarEditorMaps)\033[0m slightly edited to be usable for the current version of Roblox (as of the time of writing this)")
         printMainMessage("4. Some files were exported from the main macOS Roblox.app files. \033[38;5;202m(Logo was made using the Apple Pages icon, hued and then added the Roblox Logo)\033[0m")
-        printMainMessage(f"5. macOS App was built using \033[38;5;39mpyinstaller\033[0m. You can recreate and deploy using this command (macOS only): \033[38;5;39mpyinstaller EfazRobloxBootstrap.spec --distpath Apps --noconfirm && rm -rf build ./Apps/EfazRobloxBootstrapLoad/ && {sys.executable} Install.py --install\033[0m")
+        printMainMessage(f"5. macOS App was built using \033[38;5;39mpyinstaller\033[0m. You can recreate and deploy using this command (macOS only): \033[38;5;39mpyinstaller EfazRobloxBootstrap.spec --distpath Apps --noconfirm && zip -r -y ./Apps/EfazRobloxBootstrapMac.zip ./Apps/EfazRobloxBootstrap.app ./Apps/EfazRobloxBootstrapLoad.app && rm -rf ./build/ ./Apps/EfazRobloxBootstrapLoad/ && python3 Install.py --install\033[0m")
+        if False:
+            printMainMessage(f"Intel: \033[38;5;39mpyinstaller EfazRobloxBootstrap_MacIntel.spec --distpath Apps --noconfirm && zip -r -y ./Apps/EfazRobloxBootstrapMacIntel.zip ./Apps/EfazRobloxBootstrap.app ./Apps/EfazRobloxBootstrapLoad.app && rm -rf ./build/ ./Apps/EfazRobloxBootstrapLoad/ && {sys.executable} Install.py --install\033[0m")
         printMainMessage(f"6. Windows App was also built using \033[38;5;39mpyinstaller\033[0m. You can recreate and deploy using this command (windows only): \033[38;5;39mpyinstaller EfazRobloxBootstrap_Windows.spec --distpath Apps --noconfirm && rmdir /s /q build && del /q Apps\\EfazRobloxBootstrap\\* && {sys.executable} Install.py --install\033[0m")
         printDebugMessage(f"Operating System: {main_os}")
         printDebugMessage(f"Debug Mode Enabled")
@@ -748,6 +899,151 @@ if __name__ == "__main__":
         if isYes(a) == True:
             handler.installRoblox()
 
+    def handleOption10(li=None):
+        printWarnMessage("--- Roblox Link Shortcuts ---")
+        if type(li) is str:
+            if '://' in li:
+                path = li.split('://', 1)[1]
+            else:
+                path = li.split(':', 1)[1]
+            generated_shortcut_id = path.replace("shortcuts/", "")
+            if type(fastFlagConfig.get("EFlagRobloxLinkShortcuts")) is dict:
+                if fastFlagConfig["EFlagRobloxLinkShortcuts"].get(generated_shortcut_id):
+                    shortcut_info = fastFlagConfig["EFlagRobloxLinkShortcuts"].get(generated_shortcut_id)
+                    if type(shortcut_info.get("url")) is str and (shortcut_info.get("url").startswith("roblox:") or shortcut_info.get("url").startswith("roblox-player:")):
+                        printSuccessMessage(f'Starting shortcut "{shortcut_info.get('name')}"!')
+                        if len(given_args) > 1:
+                            given_args[1] = shortcut_info["url"]
+                        else:
+                            given_args.append(shortcut_info["url"])
+                    else:
+                        printErrorMessage(f'You were redirected to a link shortcut with id "{generated_shortcut_id}" but it doesn\' have a valid url.')
+                        input("> ")
+                        exit()
+                else:
+                    printErrorMessage(f'You were redirected to a link shortcut with id "{generated_shortcut_id}" but it doesn\' exist under your settings.')
+                    input("> ")
+                    exit()
+            else:
+                printErrorMessage(f'You were redirected to a link shortcut with id "{generated_shortcut_id}" but it doesn\' exist under your settings.')
+                input("> ")
+                exit()
+        else:
+            generated_ui_options = []
+            main_ui_options = {}
+            if type(fastFlagConfig.get("EFlagRobloxLinkShortcuts")) is dict:
+                for i, v in fastFlagConfig.get("EFlagRobloxLinkShortcuts").values():
+                    if v and v.get("name") and v.get("id") and v.get("url"):
+                        generated_ui_options.append({"index": 1, "message": f"{v.get('name')} [{i}]", "shortcut_info": v})
+            generated_ui_options.append({"index": 999999, "message": "Create a new shortcut"})
+            generated_ui_options.append({"index": 1000000, "message": "Delete a shortcut"})
+            count = 1
+            for i in generated_ui_options:
+                printMainMessage(f"[{str(count)}] = {i['message']}")
+                main_ui_options[str(count)] = i
+                count += 1
+            res = input("> ")
+            if main_ui_options.get(res):
+                opt = main_ui_options[res]
+                if opt["index"] == 999999:
+                    def loo():
+                        printMainMessage("Enter the name to use for the shortcut: ")
+                        name = input("> ")
+                        printMainMessage("Enter the url to use for the shortcut (starts with \"roblox:\" or \"roblox-player:\"): ")
+                        printMainMessage("Use this guide to help create it: https://github.com/pizzaboxer/bloxstrap/wiki/A-deep-dive-on-how-the-Roblox-bootstrapper-works#starting-roblox")
+                        def urll():
+                            ura = input("> ")
+                            if ura.startswith("roblox:") or ura.startswith("roblox-player:"):
+                                return ura
+                            else:
+                                printErrorMessage("This is not a valid Roblox URL Scheme. Please try again!")
+                                return urll()
+                        ur = urll()
+                        printMainMessage("Enter the key to be defined for this shortcut, this will be used for a url scheme: ")
+                        key = input("> ") 
+                        printMainMessage("Confirm the shortcut below? (y/n)")
+                        printMainMessage(f"Name: {name}")
+                        printMainMessage(f"URL: {ur}")
+                        printMainMessage(f"Key: {key}")
+                        if isYes(input("> ")) == True:
+                            if fastFlagConfig.get("EFlagRobloxLinkShortcuts"):
+                                fastFlagConfig.get("EFlagRobloxLinkShortcuts")[key] = {"url": ur, "name": name, "id": key}
+                            else:
+                                fastFlagConfig["EFlagRobloxLinkShortcuts"] = {}
+                                fastFlagConfig["EFlagRobloxLinkShortcuts"][key] = {"url": ur, "name": name, "id": key}
+                        if (fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir") and os.path.exists(fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir"))):
+                            if main_os == "Windows":
+                                if os.path.exists(f'{fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir")}\\FastFlagConfiguration.json'):
+                                    with open(f'{fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir")}\\FastFlagConfiguration.json', "w") as f:
+                                        json.dump(fastFlagConfig, f, indent=4)
+                                else:
+                                    printErrorMessage("Bootstrap Sync is not supported since the original unextracted directory is not found.")
+                            elif main_os == "Darwin":
+                                if os.path.exists(f'{fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir")}/FastFlagConfiguration.json'):
+                                    with open(f'{fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir")}/FastFlagConfiguration.json', "w") as f:
+                                        json.dump(fastFlagConfig, f, indent=4)
+                                else:
+                                    printErrorMessage("Bootstrap Sync is not supported since the original unextracted directory is not found.")
+
+                        with open("FastFlagConfiguration.json", "w") as f:
+                            json.dump(fastFlagConfig, f, indent=4)
+                        printMainMessage("Would you like to create an another shortcut? (y/n)")
+                        if isYes(input("> ")) == True:
+                            loo()
+                    loo()
+                    handleOptionSelect(mes="Link Creation has finished! Would you like to continue to Roblox?")
+                elif opt["index"] == 1000000:
+                    if type(fastFlagConfig.get("EFlagRobloxLinkShortcuts")) is dict:
+                        def loo():
+                            if type(fastFlagConfig.get("EFlagRobloxLinkShortcuts")) is dict:
+                                printMainMessage("Enter the key of the shortcut to delete: ")
+                                key = input("> ")
+                                if fastFlagConfig.get("EFlagRobloxLinkShortcuts").get(key):
+                                    info = fastFlagConfig.get("EFlagRobloxLinkShortcuts")
+                                    printMainMessage("Confirm the shortcut below? (y/n)")
+                                    printMainMessage(f"Name: {info['name']}")
+                                    printMainMessage(f"URL: {info['url']}")
+                                    printMainMessage(f"Key: {key}")
+                                    if isYes(input("> ")) == True:
+                                        fastFlagConfig["EFlagRobloxLinkShortcuts"][key] = {}
+                                    if (fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir") and os.path.exists(fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir"))):
+                                        if main_os == "Windows":
+                                            if os.path.exists(f'{fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir")}\\FastFlagConfiguration.json'):
+                                                with open(f'{fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir")}\\FastFlagConfiguration.json', "w") as f:
+                                                    json.dump(fastFlagConfig, f, indent=4)
+                                            else:
+                                                printErrorMessage("Bootstrap Sync is not supported since the original unextracted directory is not found.")
+                                        elif main_os == "Darwin":
+                                            if os.path.exists(f'{fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir")}/FastFlagConfiguration.json'):
+                                                with open(f'{fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir")}/FastFlagConfiguration.json', "w") as f:
+                                                    json.dump(fastFlagConfig, f, indent=4)
+                                            else:
+                                                printErrorMessage("Bootstrap Sync is not supported since the original unextracted directory is not found.")
+
+                                    with open("FastFlagConfiguration.json", "w") as f:
+                                        json.dump(fastFlagConfig, f, indent=4)
+                                    printMainMessage("Would you like to delete an another shortcut? (y/n)")
+                                    if isYes(input("> ")) == True:
+                                        loo()
+                                else:
+                                    printErrorMessage("Key doesn't exist! Let's try again!")
+                                    loo()
+                        loo()
+                        handleOptionSelect(mes="Link Deletion has finished! Would you like to continue to Roblox?")
+                    else:
+                        printErrorMessage("You have no shortcuts created!")
+                        handleOptionSelect(mes="Link Deletion has finished! Would you like to continue to Roblox?")
+                else:
+                    if type(opt["shortcut_info"]["url"]) is str and (opt["shortcut_info"].startswith("roblox:") or opt["shortcut_info"].startswith("roblox-player:")):
+                        printSuccessMessage(f"Starting shortcut \"{opt['shortcut_info']['name']}\"!")
+                        if len(given_args) > 1:
+                            given_args[1] = opt["shortcut_info"]["url"]
+                        else:
+                            given_args.append(opt["shortcut_info"]["url"])
+                    else:
+                        exit()
+            else:
+                exit()
     def handleOptionSelect(mes="Option finished! Would you like to continue to Roblox? (y/n)"):
         printWarnMessage(mes)
         a = input("> ")
@@ -773,7 +1069,7 @@ if __name__ == "__main__":
             )
 
     continue_to_url_handler = False
-    if len(given_args) > 1 and main_os == "Darwin":
+    if len(given_args) > 1:
         if "efaz-bootstrap:" in given_args[1]:
             continue_to_url_handler = True
 
@@ -782,6 +1078,7 @@ if __name__ == "__main__":
             if not (fastFlagConfig.get("EFlagCompletedTutorial") == True):
                 printWarnMessage("--- Tutorial ---")
                 printMainMessage("Welcome to Efaz's Roblox Bootstrap!")
+                printMainMessage("Efaz's Roblox Bootstrap is a Roblox bootstrap that allows you to apply modifications to your Roblox Client using Fast Flags or Files automatically!")
                 if main_os == "Darwin":
                     if os.path.exists("/Applications/EfazRobloxBootstrap.app"):
                         printMainMessage("It seems like everything seems to be working and now you have reached the next part!")
@@ -797,6 +1094,7 @@ if __name__ == "__main__":
                         input("> ")
                         exit()
 
+                printMainMessage("Before we get started, we're showing you some information for you to know.")
                 printWarnMessage("--- Information 1 ---")
                 if main_os == "Darwin":
                     printMainMessage("First, you may need to know that after you go to Roblox through this bootstrap, Roblox will not be able to be opened normally.")
@@ -875,7 +1173,6 @@ if __name__ == "__main__":
                 printMainMessage("Welcome back! I hope you have enabled some stuffs you may want!")
                 printMainMessage("Now, let's get more customizable! Next, you will be able to select your fast flags.")
                 printMainMessage("But before, prepare yourself your Roblox User ID. It will be used for some settings depending on what you select.")
-                printMainMessage("Also, after you continue, all the info above will be cleared, so keep a copy in case you may need.")
                 input("> ")
                 handleOption3()
                 printWarnMessage("--- Final Touches ---")
@@ -898,15 +1195,16 @@ if __name__ == "__main__":
                 generated_ui_options.append({"index": 1, "message": "Continue to Roblox", "func": handleOption1, "include_go_to_roblox": False})
                 generated_ui_options.append({"index": 3, "message": "Run Fast Flag Installer", "func": handleOption3, "include_go_to_roblox": True, "include_message": "Installer has finished! Would you like to go to Roblox? (y/n)"})
                 generated_ui_options.append({"index": 4, "message": "Set Settings", "func": handleOption4, "include_go_to_roblox": True, "include_message": "Settings has been saved! Would you like to go to Roblox? (y/n)"})
-                generated_ui_options.append({"index": 5, "message": "End All Roblox Instances", "func": handleOption8, "include_go_to_roblox": True, "include_message": "Roblox Instances have been ended! Would you like to rerun it? (y/n)"})
-                generated_ui_options.append({"index": 6, "message": "Reinstall Roblox", "func": handleOption9, "include_go_to_roblox": True, "include_message": "Roblox has been reinstalled! Would you like to run it now? (y/n)"})
+                generated_ui_options.append({"index": 5, "message": "Roblox Link Shortcuts", "func": handleOption10, "include_go_to_roblox": False, "include_message": "Roblox Start URL is set! Would you like to run it now? (y/n)"})
+                generated_ui_options.append({"index": 6, "message": "End All Roblox Instances", "func": handleOption8, "include_go_to_roblox": True, "include_message": "Roblox Instances have been ended! Would you like to rerun it? (y/n)"})
+                generated_ui_options.append({"index": 7, "message": "Reinstall Roblox", "func": handleOption9, "include_go_to_roblox": True, "include_message": "Roblox has been reinstalled! Would you like to run it now? (y/n)"})
                 generated_ui_options.append({"index": 99, "message": "Credits", "func": handleOption7, "include_go_to_roblox": True, "include_message": "Would you like to go to Roblox? (y/n)"})
                 if main_os == "Darwin":
                     if (fastFlagConfig.get("EFlagEnableDuplicationOfClients") == True):
                         generated_ui_options.append({"index": 2, "message": "Generate Another Roblox Instance", "func": handleOption2, "include_go_to_roblox": False})
                 if (fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir") and os.path.exists(fastFlagConfig.get("EFlagEfazRobloxBootStrapSyncDir"))):
-                    generated_ui_options.append({"index": 10, "message": "Sync to Fast Flag Configuration", "func": handleOption5, "include_go_to_roblox": True})
-                    generated_ui_options.append({"index": 11, "message": "Sync from Fast Flag Configuration", "func": handleOption6, "include_go_to_roblox": True})
+                    generated_ui_options.append({"index": 10, "message": "Sync to Fast Flag Configuration", "func": handleOption5, "include_go_to_roblox": True, "include_message": "Sync finished! Would you like to run Roblox now? (y/n)"})
+                    generated_ui_options.append({"index": 11, "message": "Sync from Fast Flag Configuration", "func": handleOption6, "include_go_to_roblox": True, "include_message": "Sync finished! Would you like to run Roblox now? (y/n)"})
 
                 generated_ui_options = sorted(generated_ui_options, key=lambda x: x["index"])
                 printWarnMessage("--- Select Mode ---")
@@ -957,7 +1255,7 @@ if __name__ == "__main__":
                     exit()
                 elif res == "3":
                     exit()
-        elif len(given_args) > 1 and main_os == "Darwin":
+        elif len(given_args) > 1:
             url = given_args[1]
             if "efaz-bootstrap" in url:
                 if "continue" in url:
@@ -985,16 +1283,18 @@ if __name__ == "__main__":
                 elif ("credits" in url) or ("about" in url):
                     handleOption7()
                     handleOptionSelect()
+                elif ("shortcuts/" in url):
+                    handleOption10(url)
                 else:
                     printDebugMessage(f"Unknown command: {url}")
                     printWarnMessage("--- Continue to Roblox? ---")
                     printMainMessage("[1] = Continue")
-                    printMainMessage("[2] = Revert Remove UI")
+                    printMainMessage("[69] = Remove Skip UI")
                     printMainMessage("[*] = End Process")
                     res = input("> ")
                     if res == "1":
                         handleOption1()
-                    elif res == "2":
+                    elif res == "69":
                         fastFlagConfig["EFlagSkipEfazRobloxBootstrapPromptUI"] = False
                         with open("FastFlagConfiguration.json", "w") as f:
                             json.dump(fastFlagConfig, f, indent=4)
@@ -1067,7 +1367,7 @@ if __name__ == "__main__":
                     else:
                         printMainMessage("Running latest version of Bootstrap!")
                 else:
-                    printDebugMessage("Current Version Data Corrupted.")
+                    printDebugMessage("There was an error reading the latest version.")
             else:
                 printDebugMessage("Update Check Response failed.")
     if (not (fastFlagConfig.get("EFlagDisableRobloxUpdateChecks") == True)):
@@ -1136,10 +1436,8 @@ if __name__ == "__main__":
                 shell = win32com.client.Dispatch('WScript.Shell')
                 shortcut = shell.CreateShortcut(shortcut_path)
                 shortcut.TargetPath = target_path
-                if working_directory:
-                    shortcut.WorkingDirectory = working_directory
-                if icon_path:
-                    shortcut.IconLocation = icon_path
+                if working_directory: shortcut.WorkingDirectory = working_directory
+                if icon_path: shortcut.IconLocation = icon_path
                 shortcut.save()
             create_shortcut(bootstrap_path, os.path.join(os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'), 'EfazRobloxBootstrap.lnk'))
             create_shortcut(bootstrap_path, os.path.join(os.path.join(os.path.join(os.environ['APPDATA']), 'Microsoft', 'Windows', 'Start Menu', 'Programs'), 'EfazRobloxBootstrap.lnk'))
@@ -1179,20 +1477,27 @@ if __name__ == "__main__":
             printSuccessMessage("Successfully changed Builder San files to GothamSSm!")
         
         if fastFlagConfig.get("EFlagEnableModModes") == True:
-            printMainMessage("Changing Icons..")
-            if main_os == "Windows":
-                shutil.copytree(f"{os.path.curdir}\\ModModes\\{fastFlagConfig['EFlagSelectedModMode']}\\", f"{stored_content_folder_destinations[found_platform]}\\", dirs_exist_ok=True)
-            elif main_os == "Darwin":
-                shutil.copytree(f"{os.path.curdir}/ModModes/{fastFlagConfig['EFlagSelectedModMode']}/", f"{stored_content_folder_destinations[found_platform]}/", dirs_exist_ok=True)
-            printSuccessMessage("Successfully changed Current Icon Files to icon set!")
+            if fastFlagConfig.get("EFlagSelectedModMode") and os.path.exists(os.path.join(os.path.curdir, "ModModes", fastFlagConfig.get("EFlagSelectedModMode"))):
+                printMainMessage("Applying Mods..")
+                if main_os == "Windows":
+                    shutil.copytree(f"{os.path.curdir}\\ModModes\\{fastFlagConfig['EFlagSelectedModMode']}\\", f"{stored_content_folder_destinations[found_platform]}\\", dirs_exist_ok=True)
+                elif main_os == "Darwin":
+                    shutil.copytree(f"{os.path.curdir}/ModModes/{fastFlagConfig['EFlagSelectedModMode']}/", f"{stored_content_folder_destinations[found_platform]}/", dirs_exist_ok=True)
+                printSuccessMessage("Successfully changed unmodded files to mod mode!")
+            else:
+                printMainMessage("Applying Mods..")
+                if main_os == "Windows":
+                    shutil.copytree(f"{os.path.curdir}\\ModModes\\Original\\", f"{stored_content_folder_destinations[found_platform]}\\", dirs_exist_ok=True)
+                elif main_os == "Darwin":
+                    shutil.copytree(f"{os.path.curdir}/ModModes/Original/", f"{stored_content_folder_destinations[found_platform]}/", dirs_exist_ok=True)
+                printSuccessMessage("Successfully changed modded files to original!")
         else:
-            printMainMessage("Changing Icon Set..")
+            printMainMessage("Applying Mods..")
             if main_os == "Windows":
                 shutil.copytree(f"{os.path.curdir}\\ModModes\\Original\\", f"{stored_content_folder_destinations[found_platform]}\\", dirs_exist_ok=True)
             elif main_os == "Darwin":
                 shutil.copytree(f"{os.path.curdir}/ModModes/Original/", f"{stored_content_folder_destinations[found_platform]}/", dirs_exist_ok=True)
-                
-            printSuccessMessage("Successfully changed Current Icon Files to original!")
+            printSuccessMessage("Successfully changed modded files to original!")
 
         if fastFlagConfig.get("EFlagEnableChangeAvatarEditorBackground") == True:
             printMainMessage("Changing Current Avatar Editor to Set Avatar Background..")
@@ -1310,7 +1615,6 @@ if __name__ == "__main__":
                         printSuccessMessage("Successfully wrote to Info.plist!")
                     else:
                         printErrorMessage(f"Something went wrong saving Roblox Info.plist: {s['message']}")
-    
     prepareRoblox()
     printMainMessage("Installing Fast Flags..")
     if loadedJSON == True:
@@ -1322,6 +1626,24 @@ if __name__ == "__main__":
             handler.installFastFlagsJSON(fastFlagConfig, debug=(fastFlagConfig.get("EFlagEnableDebugMode") == True), endRobloxInstances=False)
     else:
         printErrorMessage("There was an error reading your configuration file.")
+    mod_mode_module = None
+    mod_mode_json = None
+    if fastFlagConfig.get("EFlagEnableModModes") == True:
+        if fastFlagConfig.get("EFlagSelectedModMode") and fastFlagConfig.get("EFlagEnableModModeScripts") == True and os.path.exists(os.path.join(os.path.curdir, "ModModes", fastFlagConfig.get("EFlagSelectedModMode"), "ModScript.py")):
+            if os.path.exists(os.path.join(os.path.curdir, "ModModes", fastFlagConfig.get("EFlagSelectedModMode"), "Manifest.json")):
+                mod_mode_json = readJSONFile(f"./ModModes/{fastFlagConfig.get('EFlagSelectedModMode')}/Manifest.json")
+                if mod_mode_json:
+                    if mod_mode_json.get("mod_script") == True:
+                        printMainMessage("Preparing Mod Mode Script..")
+                        script_path = os.path.join(os.path.curdir, "ModModes", fastFlagConfig.get("EFlagSelectedModMode"), "ModScript.py")
+                        try:
+                            spec = importlib.util.spec_from_file_location("ModScript", script_path)
+                            mod_mode_module = importlib.util.module_from_spec(spec)
+                            spec.loader.exec_module(mod_mode_module)
+                            printSuccessMessage("Successfully connected to script!")
+                        except Exception as e:
+                            printDebugMessage(f"Error from mod mode module: {str(e)}")
+                            printErrorMessage("Something went wrong with loading the mod mode module!")
     printSuccessMessage("Done! Roblox is ready!")
     printWarnMessage("--- Running Roblox ---")
     setTypeOfServer = 0
@@ -1329,35 +1651,37 @@ if __name__ == "__main__":
     rpc_info = None
     set_current_private_server_key = None
     current_place_info = None
+    is_teleport = False
+    updated_count = 0
 
-    def onGameJoinFull(info):
+    def onGameJoined(info):
         if info.get("ip"):
             printDebugMessage(f"Roblox IP Address Detected! IP: {info.get("ip")}")
-            if fastFlagConfig.get("EFlagNotifyServerLocation") == True:
-                setUDMUXIP = info.get('ip')
-                generated_location = "Unknown Location"
-                try:
-                    import requests
-                except Exception as e:
-                    pip().install(["requests"])
-                    import requests
-                    printSuccessMessage("Successfully installed modules!")
-                server_info_res = requests.get(f"https://ipinfo.io/{setUDMUXIP}/json")
-                if server_info_res.ok:
-                    server_info_json = server_info_res.json()
-                    if server_info_json.get("city") and server_info_json.get("country"):
-                        if not (server_info_json.get("region") == None or server_info_json.get("region") == ""):
-                            generated_location = f"{server_info_json['city']}, {server_info_json['region']}, {server_info_json['country']}"
-                        else:
-                            generated_location = f"{server_info_json['city']}, {server_info_json['country']}"
-                        printSuccessMessage(f"Roblox is connecting to a server in: {generated_location} [{setUDMUXIP}]")
+            allocated_roblox_ip = info.get("ip")
+            generated_location = "Unknown Location"
+            try:
+                import requests
+            except Exception as e:
+                pip().install(["requests"])
+                import requests
+                printSuccessMessage("Successfully installed modules!")
+            server_info_res = requests.get(f"https://ipinfo.io/{allocated_roblox_ip}/json")
+            if server_info_res.ok:
+                server_info_json = server_info_res.json()
+                if server_info_json.get("city") and server_info_json.get("country"):
+                    if not (server_info_json.get("region") == None or server_info_json.get("region") == ""):
+                        generated_location = f"{server_info_json['city']}, {server_info_json['region']}, {server_info_json['country']}"
                     else:
-                        if fastFlagConfig.get("EFlagEnableDebugMode"): printDebugMessage(server_info_res.text)
-                        printDebugMessage("Failed to get server information: IP Request resulted with no information.")
+                        generated_location = f"{server_info_json['city']}, {server_info_json['country']}"
                 else:
                     if fastFlagConfig.get("EFlagEnableDebugMode"): printDebugMessage(server_info_res.text)
-                    printDebugMessage("Failed to get server information: IP Request Rejected.")
+                    printDebugMessage("Failed to get server information: IP Request resulted with no information.")
+            else:
+                if fastFlagConfig.get("EFlagEnableDebugMode"): printDebugMessage(server_info_res.text)
+                printDebugMessage("Failed to get server information: IP Request Rejected.")
 
+            if fastFlagConfig.get("EFlagNotifyServerLocation") == True:
+                printSuccessMessage(f"Roblox is connecting to a server in: {generated_location} [{allocated_roblox_ip}]")
                 if setTypeOfServer == 0:
                     displayNotification("Joining Server", f"You have connected to a server from {generated_location}!")
                 elif setTypeOfServer == 1:
@@ -1365,21 +1689,16 @@ if __name__ == "__main__":
                 elif setTypeOfServer == 2:
                     displayNotification("Joining Reserved Server", f"You have connected to a reserved server from {generated_location}!")
                 elif setTypeOfServer == 3:
-                    displayNotification("Joining Party", f"You have connected to a party from {generated_location}!")
+                    displayNotification("Joining Party", f"You have connected to a party server from {generated_location}!")
                 else:
                     displayNotification("Joining Server", f"You have connected to a server from {generated_location}!")
                 printDebugMessage("Sent Notification to Bootstrap for Notification Center shipping!")
-            if fastFlagConfig.get("EFlagEnableDiscordRPC") == True:
-                try:
-                    from DiscordPresenceHandler import Presence
-                    import requests
-                except Exception as e:
-                    pip().install(["pypresence", "requests"])
-                    from DiscordPresenceHandler import Presence
-                    import requests
-                    printSuccessMessage("Successfully installed presence modules!")
-                global current_place_info
-                generated_universe_id_res = requests.get(f"https://apis.roblox.com/universes/v1/places/{current_place_info.get("placeId")}/universe")
+
+            global current_place_info
+            if current_place_info:
+                current_place_info["server_location"] = generated_location
+
+                generated_universe_id_res = requests.get(f"https://apis.roblox.com/universes/v1/places/{current_place_info.get('placeId')}/universe")
                 if generated_universe_id_res.ok:
                     generated_universe_id_json = generated_universe_id_res.json()
                     if generated_universe_id_json and not (generated_universe_id_json.get("universeId") == None):
@@ -1398,84 +1717,228 @@ if __name__ == "__main__":
                         generated_thumbnail_api_json = generated_thumbnail_api_res.json()
                         generated_place_api_json = generated_place_api_res.json()
 
-                        thumbnail_url = "https://github.com/EfazDev/roblox-bootstrap/raw/main/BootstrapImages/DiscordIcon.png"
-
+                        thumbnail_url = "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/DiscordIcon.png"
                         if generated_thumbnail_api_json.get("data"):
                             if len(generated_thumbnail_api_json.get("data")) > 0:
                                 thumbnail_url = generated_thumbnail_api_json.get("data")[0]["imageUrl"]
+                        if current_place_info:
+                            current_place_info["thumbnail_url"] = thumbnail_url
 
                         if len(generated_place_api_json.get("data")) > 0:
                             generated_place_api_json = generated_place_api_json.get("data")[0]
+                            if current_place_info:
+                                current_place_info["place_info"] = generated_place_api_json
                             try:
-                                global rpc
-                                need_new_rpc = True
-                                try: 
-                                    if rpc and rpc.connected == True:
-                                        need_new_rpc = False
-                                except Exception as e:
-                                    printDebugMessage(f"There was an error setting your Discord Embed: {str(e)}")
-                                if need_new_rpc == True:
-                                    rpc = Presence("1282094583014232076")
                                 start_time = datetime.datetime.now(tz=datetime.UTC).timestamp()
-                                def embed():
+                                if current_place_info:
+                                    current_place_info["start_time"] = start_time
+                                if fastFlagConfig.get("EFlagEnableDiscordRPC") == True:
                                     try:
-                                        global rpc
-                                        if need_new_rpc == True:
-                                            rpc.connect()
-                                        err_count = 0
-
-                                        global rpc_info
-                                        global set_current_private_server_key
-                                        while not (rpc == None):
-                                            if rpc_info == None:
-                                                rpc_info = {}
-                                            formatted_info = {
-                                                "details": rpc_info.get("details") if rpc_info.get("details") else f"Playing {generated_place_api_json['name']}",
-                                                "state": rpc_info.get("state") if rpc_info.get("state") else f"Made by {generated_place_api_json['creator']['name']}!",
-                                                "start": rpc_info.get("start") if rpc_info.get("start") else start_time,
-                                                "stop": rpc_info.get("stop") if rpc_info.get("stop") and rpc_info.get("stop") > 1000 else None,
-                                                "large_image": rpc_info.get("large_image") if rpc_info.get("large_image") else thumbnail_url,
-                                                "large_text": rpc_info.get("large_text") if rpc_info.get("large_text") else generated_place_api_json['name'],
-                                                "launch_data": rpc_info.get("launch_data") if rpc_info.get("launch_data") else ""
-                                            }
-                                            if not formatted_info["launch_data"] == "":
-                                                formatted_info["launch_data"] = f"&launchData={formatted_info['launch_data']}"
-                                            if (setTypeOfServer == 1 or setTypeOfServer == 2) and fastFlagConfig.get("EFlagAllowPrivateServerJoining") == True and set_current_private_server_key:
-                                                formatted_info["launch_data"] = f'{formatted_info["launch_data"]}&accessCode={set_current_private_server_key}&gameInstanceId={current_place_info['jobId']}'
-                                            else:
-                                                formatted_info["launch_data"] = f'{formatted_info["launch_data"]}&gameInstanceId={current_place_info['jobId']}'
-                                            try:
-                                                isInstance = False
-                                                if formatted_info.get("start") and formatted_info.get("end"):
-                                                    isInstance = True
-                                                if rpc:
-                                                    try:
-                                                        if fastFlagConfig.get("EFlagEnableDiscordRPCJoining") == True:
-                                                            rpc.update(details=formatted_info["details"], state=formatted_info["state"], start=formatted_info["start"], end=formatted_info["stop"], large_image=formatted_info["large_image"], large_text=formatted_info["large_text"], instance=isInstance, small_image="https://github.com/EfazDev/roblox-bootstrap/raw/main/BootstrapImages/DiscordIcon.png", small_text="Efaz's Roblox Bootstrap", buttons=[{"label": "Join Server! 🚀", "url": f"roblox://experiences/start?placeId={current_place_info['placeId']}{formatted_info['launch_data']}"}, {"label": "Open Game Page 🌐", "url": f"https://www.roblox.com/games/{current_place_info['placeId']}"}])
-                                                        else:
-                                                            rpc.update(details=formatted_info["details"], state=formatted_info["state"], start=formatted_info["start"], end=formatted_info["stop"], large_image=formatted_info["large_image"], large_text=formatted_info["large_text"], instance=isInstance, small_image="https://github.com/EfazDev/roblox-bootstrap/raw/main/BootstrapImages/DiscordIcon.png", small_text="Efaz's Roblox Bootstrap", buttons=[{"label": "Open Game Page 🌐", "url": f"https://www.roblox.com/games/{current_place_info['placeId']}"}])
-                                                    except Exception as e:
-                                                        if err_count > 9:
-                                                            printDebugMessage("Discord RPC Session may be broken. Loop has been broken.")
-                                                            break
-                                                        else:
-                                                            err_count += 1
-                                                else:
-                                                    rpc = None
-                                                    break
-                                            except Exception as e:
-                                                if err_count > 9:
-                                                    rpc = None
-                                                    printDebugMessage("Discord RPC Session may be broken. Loop has been broken.")
-                                                    break
-                                                else:
-                                                    err_count += 1
-                                                    printDebugMessage(f"There was an error setting your Discord Embed: {str(e)}")
-                                            time.sleep(1)
+                                        from DiscordPresenceHandler import Presence
+                                        import requests
+                                    except Exception as e:
+                                        pip().install(["pypresence", "requests"])
+                                        from DiscordPresenceHandler import Presence
+                                        import requests
+                                        printSuccessMessage("Successfully installed presence modules!")
+                                    global rpc
+                                    need_new_rpc = True
+                                    try: 
+                                        if rpc and rpc.connected == True:
+                                            need_new_rpc = False
                                     except Exception as e:
                                         printDebugMessage(f"There was an error setting your Discord Embed: {str(e)}")
-                                threading.Thread(target=embed).start()
-                                printDebugMessage("Successfully attached Discord RPC!")
+                                    if need_new_rpc == True:
+                                        rpc = Presence("1005469189907173486")
+                                        rpc.connect()
+                                    def embed():
+                                        try:
+                                            global rpc
+                                            global rpc_info
+                                            global set_current_private_server_key
+
+                                            err_count = 0
+                                            job_id = rpc.generate_job_id()
+                                            while True:
+                                                if (not rpc) or (not rpc.connected) or (not rpc.current_job_id == job_id):
+                                                    break
+                                                if rpc_info == None:
+                                                    rpc_info = {}
+                                                formatted_info = {
+                                                    "details": rpc_info.get("details") if rpc_info.get("details") else f"Playing {generated_place_api_json['name']}",
+                                                    "state": rpc_info.get("state") if rpc_info.get("state") else f"Made by {generated_place_api_json['creator']['name']}!",
+                                                    "start": rpc_info.get("start") if rpc_info.get("start") else start_time,
+                                                    "stop": rpc_info.get("stop") if rpc_info.get("stop") and rpc_info.get("stop") > 1000 else None,
+                                                    "large_image": rpc_info.get("large_image") if rpc_info.get("large_image") else thumbnail_url,
+                                                    "large_text": rpc_info.get("large_text") if rpc_info.get("large_text") else generated_place_api_json['name'],
+                                                    "launch_data": rpc_info.get("launch_data") if rpc_info.get("launch_data") else ""
+                                                }
+                                                launch_data = ""
+                                                add_exam = False
+                                                if not formatted_info["launch_data"] == "":
+                                                    formatted_info["launch_data"] = f"&launchData={formatted_info['launch_data']}"
+                                                    add_exam = False
+                                                if (setTypeOfServer == 1 or setTypeOfServer == 2 or setTypeOfServer == 3) and fastFlagConfig.get("EFlagAllowPrivateServerJoining") == True and set_current_private_server_key:
+                                                    if add_exam == True:
+                                                        launch_data = f'{launch_data}?gameInstanceId={current_place_info["jobId"]}?accessCode={set_current_private_server_key}'
+                                                    else:
+                                                        launch_data = f'{launch_data}&gameInstanceId={current_place_info["jobId"]}&accessCode={set_current_private_server_key}'
+                                                else:
+                                                    if add_exam == True:
+                                                        launch_data = f'{launch_data}?gameInstanceId={current_place_info["jobId"]}'
+                                                    else:
+                                                        launch_data = f'{launch_data}&gameInstanceId={current_place_info["jobId"]}'
+                                                formatted_info["launch_data"] = launch_data
+                                                try:
+                                                    isInstance = False
+                                                    if formatted_info.get("start") and formatted_info.get("end"):
+                                                        isInstance = True
+                                                    if rpc:
+                                                        try:
+                                                            if fastFlagConfig.get("EFlagEnableDiscordRPCJoining") == True:
+                                                                req = rpc.update(
+                                                                    job_id=job_id, 
+                                                                    details=formatted_info["details"], 
+                                                                    state=formatted_info["state"], 
+                                                                    start=formatted_info["start"], 
+                                                                    end=formatted_info["stop"], 
+                                                                    large_image=formatted_info["large_image"], 
+                                                                    large_text=formatted_info["large_text"], 
+                                                                    instance=isInstance, 
+                                                                    small_image="https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/DiscordIcon.png", 
+                                                                    small_text="Efaz's Roblox Bootstrap", 
+                                                                    buttons=[
+                                                                        {
+                                                                            "label": "Join Server! 🚀",
+                                                                            "url": f"roblox://experiences/start?placeId={current_place_info['placeId']}{formatted_info['launch_data']}"
+                                                                        }, 
+                                                                        {
+                                                                            "label": "Open Game Page 🌐", 
+                                                                            "url": f"https://www.roblox.com/games/{current_place_info['placeId']}"
+                                                                        }
+                                                                    ]
+                                                                )
+                                                            else:
+                                                                req = rpc.update(
+                                                                    job_id=job_id, 
+                                                                    details=formatted_info["details"], 
+                                                                    state=formatted_info["state"], 
+                                                                    start=formatted_info["start"], 
+                                                                    end=formatted_info["stop"], 
+                                                                    large_image=formatted_info["large_image"], 
+                                                                    large_text=formatted_info["large_text"], 
+                                                                    instance=isInstance, 
+                                                                    small_image="https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/DiscordIcon.png", 
+                                                                    small_text="Efaz's Roblox Bootstrap", 
+                                                                    buttons=[{
+                                                                        "label": "Open Game Page 🌐", 
+                                                                        "url": f"https://www.roblox.com/games/{current_place_info['placeId']}"
+                                                                    }]
+                                                                )
+                                                            if req.get("code") == 2:
+                                                                break
+                                                        except Exception as e:
+                                                            if err_count > 9:
+                                                                printDebugMessage("Discord RPC Session may be broken. Loop has been broken.")
+                                                                break
+                                                            else:
+                                                                err_count += 1
+                                                except Exception as e:
+                                                    if err_count > 9:
+                                                        printDebugMessage("Discord RPC Session may be broken. Loop has been broken.")
+                                                        break
+                                                    else:
+                                                        err_count += 1
+                                                        printDebugMessage(f"There was an error setting your Discord Embed: {str(e)}")
+                                                time.sleep(0.1)
+                                        except Exception as e:
+                                            printDebugMessage(f"There was an error setting your Discord Embed: {str(e)}")
+                                    embed_thread = threading.Thread(target=embed)
+                                    embed_thread.daemon = True
+                                    embed_thread.start()
+                                    printDebugMessage("Successfully attached Discord RPC!")
+                                if fastFlagConfig.get("EFlagUseDiscordWebhook") == True and fastFlagConfig.get("EFlagDiscordWebhookConnect") == True:
+                                    try:
+                                        import requests
+                                    except Exception as e:
+                                        pip().install(["requests"])
+                                        import requests
+                                        printSuccessMessage("Successfully installed modules!")
+                                    if fastFlagConfig.get("EFlagDiscordWebhookURL"):
+                                        title = "Joined Server!"
+                                        if setTypeOfServer == 0:
+                                            title = "Joined Public Server!"
+                                        elif setTypeOfServer == 1:
+                                            title = "Joined Private Server!"
+                                        elif setTypeOfServer == 2:
+                                            title = "Joined Reserved Server!"
+                                        elif setTypeOfServer == 3:
+                                            title = "Joined Party!"
+                                        else:
+                                            title = "Joined Server!"
+                                        launch_data = ""
+                                        add_exam = False
+                                        if not launch_data == "":
+                                            launch_data = f"&launchData={launch_data}"
+                                            add_exam = False
+                                        if (setTypeOfServer == 1 or setTypeOfServer == 2 or setTypeOfServer == 3) and fastFlagConfig.get("EFlagAllowPrivateServerJoining") == True and set_current_private_server_key:
+                                            if add_exam == True:
+                                                launch_data = f'{launch_data}?gameInstanceId={current_place_info["jobId"]}&accessCode={set_current_private_server_key}'
+                                            else:
+                                                launch_data = f'{launch_data}?gameInstanceId={current_place_info["jobId"]}&accessCode={set_current_private_server_key}'
+                                        else:
+                                            if add_exam == True:
+                                                launch_data = f'{launch_data}?gameInstanceId={current_place_info["jobId"]}'
+                                            else:
+                                                launch_data = f'{launch_data}&gameInstanceId={current_place_info["jobId"]}'
+
+                                        generated_body = {
+                                            "content": f"<@{fastFlagConfig.get('EFlagDiscordWebhookUserId')}>",
+                                            "embeds": [
+                                                {
+                                                    "title": title,
+                                                    "color": 65280,
+                                                    "fields": [
+                                                        {
+                                                            "name": "Connected Game",
+                                                            "value": f"[{generated_place_api_json['name']}](https://www.roblox.com/games/{current_place_info.get('placeId')})",
+                                                            "inline": True
+                                                        },
+                                                        {
+                                                            "name": "Join Link",
+                                                            "value": f"[Join Now!](https://rbx.efaz.dev/join?placeId={current_place_info.get('placeId')}{launch_data})",
+                                                            "inline": True
+                                                        },
+                                                        {
+                                                            "name": "Started",
+                                                            "value": f"<t:{int(start_time)}:R>",
+                                                            "inline": True
+                                                        },
+                                                        {
+                                                            "name": "Server Location",
+                                                            "value": f"{generated_location}",
+                                                            "inline": True
+                                                        }
+                                                    ],
+                                                    "author": {
+                                                        "name": "Efaz's Roblox Bootstrap",
+                                                        "icon_url": "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/DiscordIcon.png"
+                                                    },
+                                                    "thumbnail": {
+                                                        "url": thumbnail_url
+                                                    }
+                                                }
+                                            ],
+                                            "attachments": []
+                                        }
+                                        try:
+                                            req = requests.post(fastFlagConfig.get("EFlagDiscordWebhookURL"), json=generated_body)
+                                            if req.ok:
+                                                printDebugMessage("Successfully sent webhook!")
+                                            else:
+                                                printErrorMessage("There was an issue sending your webhook message. Is it valid?")
+                                        except Exception as e:
+                                            printErrorMessage("There was an issue sending your webhook message. Is it valid?")
                             except Exception as e:
                                 rpc = None
                                 printDebugMessage("Unable to insert Discord Rich Presence. Please make sure Discord is open.")
@@ -1483,48 +1946,146 @@ if __name__ == "__main__":
                             printDebugMessage("Provided place info is not found.")
                     else:
                         printDebugMessage(f"Place responses rejected by Roblox. [{generated_thumbnail_api_res.ok},{generated_thumbnail_api_res.status_code} | {generated_place_api_res.ok},{generated_place_api_res.status_code}]")
-    def onGameJoinInfo(info):
+    def onGameStart(info):
+        global current_place_info
         if info.get("placeId") and info.get("jobId"):
-            def createThreadToReadInfo():
-                if info.get("ip"):
-                    if fastFlagConfig.get("EFlagEnableDiscordRPC") == True:
-                        try:
-                            from DiscordPresenceHandler import Presence
-                            import requests
-                        except Exception as e:
-                            pip().install(["pypresence", "requests"])
-                            from DiscordPresenceHandler import Presence
-                            import requests
-                            printSuccessMessage("Successfully installed presence modules!")
-                        global current_place_info
-                        current_place_info = info
-                else:
-                    while True:
-                        time.sleep(0.2)
-                        if setUDMUXIP:
-                            break
-                    onGameJoinInfo(info)
-            threading.Thread(target=createThreadToReadInfo).start()
-    def onLeftServer(consoleLine):
-        if type(consoleLine) is str and "doTeleport" in consoleLine:
+            current_place_info = info
+    def onGameDisconnected(info):
+        global current_place_info
+        global is_teleport
+        it_is_teleport = False
+        synced_place_info = None
+        if current_place_info:
+            synced_place_info = current_place_info
+            current_place_info = None
+        if is_teleport == True:
             printYellowMessage("User has been teleported!")
+            it_is_teleport = True
+            is_teleport = False
         else:
-            printErrorMessage("User has left the server!")
-        global setUDMUXIP
-        setUDMUXIP = None
+            printErrorMessage("User has disconnected from the server!")
+        if fastFlagConfig.get("EFlagUseDiscordWebhook") == True and fastFlagConfig.get("EFlagDiscordWebhookDisconnect") == True:
+            try:
+                import requests
+            except Exception as e:
+                pip().install(["requests"])
+                import requests
+                printSuccessMessage("Successfully installed modules!")
+            if fastFlagConfig.get("EFlagDiscordWebhookURL"):
+                thumbnail_url = "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/DiscordIcon.png"
+                server_location = "Unknown Location"
+                start_time = 0
+                place_info = {"name": "???"}
+
+                if synced_place_info:
+                    if synced_place_info.get("start_time"):
+                        start_time = synced_place_info.get("start_time")
+                    if synced_place_info.get("server_location"):
+                        server_location = synced_place_info.get("server_location")
+                    if synced_place_info.get("place_info"):
+                        place_info = synced_place_info.get("place_info")
+                    if synced_place_info.get("thumbnail_url"):
+                        thumbnail_url = synced_place_info.get("thumbnail_url")
+
+                    server_type = "Public Server"
+                    if setTypeOfServer == 0:
+                        server_type = "Public Server"
+                    elif setTypeOfServer == 1:
+                        server_type = "Private Server"
+                    elif setTypeOfServer == 2:
+                        server_type = "Reserved Server"
+                    elif setTypeOfServer == 3:
+                        server_type = "Party"
+                    else:
+                        server_type = "Public Server"
+
+                    title = f"Disconnected from {server_type}!"
+                    color = 16711680
+
+                    if it_is_teleport == True:
+                        title = f"Teleported to {server_type}!"
+                        color = 16776960
+
+                    launch_data = ""
+                    add_exam = False
+                    if not launch_data == "":
+                        launch_data = f"&launchData={launch_data}"
+                        add_exam = False
+                    if (setTypeOfServer == 1 or setTypeOfServer == 2 or setTypeOfServer == 3) and fastFlagConfig.get("EFlagAllowPrivateServerJoining") == True and set_current_private_server_key:
+                        if add_exam == True:
+                            launch_data = f'{launch_data}?gameInstanceId={synced_place_info["jobId"]}?accessCode={set_current_private_server_key}'
+                        else:
+                            launch_data = f'{launch_data}&gameInstanceId={synced_place_info["jobId"]}&accessCode={set_current_private_server_key}'
+                    else:
+                        if add_exam == True:
+                            launch_data = f'{launch_data}?gameInstanceId={synced_place_info["jobId"]}'
+                        else:
+                            launch_data = f'{launch_data}&gameInstanceId={synced_place_info["jobId"]}'
+
+                    generated_body = {
+                        "content": f"<@{fastFlagConfig.get('EFlagDiscordWebhookUserId')}>",
+                        "embeds": [
+                            {
+                                "title": title,
+                                "color": color,
+                                "fields": [
+                                    {
+                                        "name": "Disconnected Game",
+                                        "value": f"[{place_info['name']}](https://www.roblox.com/games/{synced_place_info.get('placeId')})",
+                                        "inline": True
+                                    },
+                                    {
+                                        "name": "Join Link",
+                                        "value": f"[Join Again!](https://rbx.efaz.dev/join?placeId={synced_place_info.get('placeId')}{launch_data})",
+                                        "inline": True
+                                    },
+                                    {
+                                        "name": "Started",
+                                        "value": f"<t:{int(start_time)}:R>",
+                                        "inline": True
+                                    },
+                                    {
+                                        "name": "Server Location",
+                                        "value": f"{server_location}",
+                                        "inline": True
+                                    },
+                                    {
+                                        "name": "Closing Reason",
+                                        "value": f"{info.get('message')} (Code: {info.get('code')})",
+                                        "inline": True
+                                    }
+                                ],
+                                "author": {
+                                    "name": "Efaz's Roblox Bootstrap",
+                                    "icon_url": "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/DiscordIcon.png"
+                                },
+                                "thumbnail": {
+                                    "url": thumbnail_url
+                                }
+                            }
+                        ],
+                        "attachments": []
+                    }
+                    try:
+                        req = requests.post(fastFlagConfig.get("EFlagDiscordWebhookURL"), json=generated_body)
+                        if req.ok:
+                            printDebugMessage("Successfully sent webhook!")
+                        else:
+                            printErrorMessage("There was an issue sending your webhook message. Is it valid?")
+                    except Exception as e:
+                        printErrorMessage("There was an issue sending your webhook message. Is it valid?")
         if fastFlagConfig.get("EFlagEnableDiscordRPC") == True:
             global rpc
             global rpc_info
-            global current_place_info
             try: 
                 if rpc:
                     rpc.clear()
             except Exception as e:
                 printDebugMessage(f"There was an error setting your Discord Embed: {str(e)}")
             rpc_info = None
-            current_place_info = None
     def onTeleport(consoleLine):
-        onLeftServer(consoleLine)
+        global is_teleport
+        is_teleport = True
     def onBloxstrapMessage(info):
         if fastFlagConfig.get("EFlagAllowBloxstrapSDK") == True:
             printMainMessage("Received Bloxstrap Message!")
@@ -1554,22 +2115,39 @@ if __name__ == "__main__":
     def onRobloxExit(consoleLine):
         printDebugMessage("User has closed the Roblox window!")
         printErrorMessage("Roblox window was closed! Closing Bootstrap App..")
-        global setUDMUXIP
-        setUDMUXIP = None
         if fastFlagConfig.get("EFlagEnableDiscordRPC") == True:
             global rpc
             global rpc_info
             global current_place_info
             try: 
-                if rpc:
-                    rpc.close()
+                if rpc: rpc.close()
             except Exception as e:
                 printDebugMessage(f"There was an error setting your Discord Embed: {str(e)}")
             rpc = None
             rpc_info = None
             current_place_info = None
-        os.system("exit")
         sys.exit(0)
+    def onRobloxCrash(consoleLine):
+        global updated_count
+        updated_count = 999
+        printErrorMessage("There was an error inside the RobloxPlayer that has caused it to crash! Sorry!")
+        printDebugMessage(f"Crashed Data: {consoleLine}")
+    def onAllRobloxEvents(data):
+        if fastFlagConfig.get("EFlagEnableModModes") == True:
+            if fastFlagConfig.get("EFlagSelectedModMode") and fastFlagConfig.get("EFlagEnableModModeScripts") == True and os.path.exists(os.path.join(os.path.curdir, "ModModes", fastFlagConfig.get("EFlagSelectedModMode"), "ModScript.py")):
+                if os.path.exists(os.path.join(os.path.curdir, "ModModes", fastFlagConfig.get("EFlagSelectedModMode"), "Manifest.json")):
+                    if mod_mode_json:
+                        if mod_mode_json.get("mod_script") == True:
+                            try:
+                                if type(fastFlagConfig.get("EFlagModModeAllowedDetectments")) is list:
+                                    if "onRobloxLog" in fastFlagConfig.get("EFlagModModeAllowedDetectments"):
+                                        if hasattr(mod_mode_module, "onRobloxLog"):
+                                            threading.Thread(target=getattr(mod_mode_module, "onRobloxLog"), args=[data]).start()
+                                    if data.get("eventName") in fastFlagConfig.get("EFlagModModeAllowedDetectments"):
+                                        if hasattr(mod_mode_module, data.get("eventName")):
+                                            threading.Thread(target=getattr(mod_mode_module, data.get("eventName")), args=[data["data"]]).start()
+                            except Exception as e:
+                                printDebugMessage(f"Unable to run mod mode script: {str(e)}")
 
     def onPrivateServer(data):
         global setTypeOfServer
@@ -1589,52 +2167,75 @@ if __name__ == "__main__":
         else:
             set_current_private_server_key = None
         printSuccessMessage("Roblox is currently pending to a reserved server!")
+    def onPartyServer(data):
+        global setTypeOfServer
+        global set_current_private_server_key
+        setTypeOfServer = 3
+        if fastFlagConfig.get("EFlagAllowPrivateServerJoining") == True and data and data.get("data"):
+            set_current_private_server_key = data["data"].get("accessCode")
+        else:
+            set_current_private_server_key = None
+        printSuccessMessage("Roblox is currently pending to a party!")
     def onMainServer(consoleLine):
         global setTypeOfServer
         global set_current_private_server_key
         setTypeOfServer = 0
         set_current_private_server_key = None
-        printSuccessMessage("Roblox is currently pending to a normal server!")
+        printSuccessMessage("Roblox is currently pending to a public server!")
     
     def runRoblox():
         if makeAnotherRoblox == True:
             printDebugMessage(f"Opening extra Roblox window..")
-            threading.Thread(target=checkIfUpdateWasNeeded).start()
-            clas = handler.openRoblox(makeDupe=True, debug=(fastFlagConfig.get("EFlagEnableDebugMode") == True), attachInstance=True, allowRobloxOtherLogDebug=(fastFlagConfig.get("EFlagAllowFullDebugMode") == True))
+            clas = handler.openRoblox(makeDupe=True, debug=(fastFlagConfig.get("EFlagEnableDebugMode") == True), attachInstance=(not (fastFlagConfig.get("EFlagAllowActivityTracking") == False)), allowRobloxOtherLogDebug=(fastFlagConfig.get("EFlagAllowFullDebugMode") == True))
             if clas:
-                clas.setRobloxEventCallback("onGameEntry", onGameJoinInfo)
-                clas.setRobloxEventCallback("onGameJoined", onGameJoinFull)
-                clas.setRobloxEventCallback("onGameLeaving", onLeftServer)
+                clas.setRobloxEventCallback("onRobloxExit", onRobloxExit)
+                clas.setRobloxEventCallback("onRobloxCrash", onRobloxCrash)
+                clas.setRobloxEventCallback("onRobloxLog", onAllRobloxEvents)
+                clas.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
+                clas.setRobloxEventCallback("onGameStart", onGameStart)
+                clas.setRobloxEventCallback("onGameJoined", onGameJoined)
+                clas.setRobloxEventCallback("onGameDisconnected", onGameDisconnected)
                 clas.setRobloxEventCallback("onGameLoading", onMainServer)
                 clas.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
                 clas.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
+                clas.setRobloxEventCallback("onGameLoadingParty", onPartyServer)
                 clas.setRobloxEventCallback("onGameTeleport", onTeleport)
-
-                clas.setRobloxEventCallback("onRobloxExit", onRobloxExit)
-                clas.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
+                printSuccessMessage("Connected to Roblox Instance from log file for Activity Tracking!")
             else:
                 printDebugMessage("No RobloxInstance class was registered")
+            check_update_thread = threading.Thread(target=checkIfUpdateWasNeeded)
+            check_update_thread.start()
         elif len(given_args) > 1:
-            url = given_args[1]
-            if ("roblox-player:" in url) or ("roblox:" in url) or ("efaz-bootstrap" in url and "continue" in url) or ("efaz-bootstrap" in url and "new" in url) or ("efaz-bootstrap" in url and "menu" in url):
-                printDebugMessage(f"Running using Roblox URL: {url}")
-                threading.Thread(target=checkIfUpdateWasNeeded).start()
-                clas = handler.openRoblox(forceQuit=(not (fastFlagConfig.get("EFlagEnableDuplicationOfClients") == True)), makeDupe=(fastFlagConfig.get("EFlagEnableDuplicationOfClients") == True), debug=(fastFlagConfig.get("EFlagEnableDebugMode") == True), startData=url, attachInstance=True, allowRobloxOtherLogDebug=(fastFlagConfig.get("EFlagAllowFullDebugMode") == True))
-                if clas:
-                    clas.setRobloxEventCallback("onGameEntry", onGameJoinInfo)
-                    clas.setRobloxEventCallback("onGameJoined", onGameJoinFull)
-                    clas.setRobloxEventCallback("onGameLeaving", onLeftServer)
-                    clas.setRobloxEventCallback("onGameLoading", onMainServer)
-                    clas.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
-                    clas.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
-                    clas.setRobloxEventCallback("onGameTeleport", onTeleport)
-
-                    clas.setRobloxEventCallback("onRobloxExit", onRobloxExit)
-                    clas.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
+            if main_os == "Darwin":
+                url_str = unquote(given_args[1])
+                if url_str:
+                    url = unquote(url_str)
+            elif main_os == "Windows":
+                url = given_args[1]
+            if url:
+                if ("roblox-player:" in url) or ("roblox:" in url) or ("efaz-bootstrap" in url and "continue" in url) or ("efaz-bootstrap" in url and "new" in url) or ("efaz-bootstrap" in url and "menu" in url):
+                    printDebugMessage(f"Running using Roblox URL: {url}")
+                    clas = handler.openRoblox(forceQuit=(not (fastFlagConfig.get("EFlagEnableDuplicationOfClients") == True)), makeDupe=(fastFlagConfig.get("EFlagEnableDuplicationOfClients") == True), debug=(fastFlagConfig.get("EFlagEnableDebugMode") == True), startData=url, attachInstance=(not (fastFlagConfig.get("EFlagAllowActivityTracking") == False)), allowRobloxOtherLogDebug=(fastFlagConfig.get("EFlagAllowFullDebugMode") == True))
+                    if clas:
+                        clas.setRobloxEventCallback("onRobloxExit", onRobloxExit)
+                        clas.setRobloxEventCallback("onRobloxCrash", onRobloxCrash)
+                        clas.setRobloxEventCallback("onRobloxLog", onAllRobloxEvents)
+                        clas.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
+                        clas.setRobloxEventCallback("onGameStart", onGameStart)
+                        clas.setRobloxEventCallback("onGameJoined", onGameJoined)
+                        clas.setRobloxEventCallback("onGameDisconnected", onGameDisconnected)
+                        clas.setRobloxEventCallback("onGameLoading", onMainServer)
+                        clas.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
+                        clas.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
+                        clas.setRobloxEventCallback("onGameLoadingParty", onPartyServer)
+                        clas.setRobloxEventCallback("onGameTeleport", onTeleport)
+                        printSuccessMessage("Connected to Roblox Instance from log file for Activity Tracking!")
+                    else:
+                        printDebugMessage("No RobloxInstance class was registered")
+                    check_update_thread = threading.Thread(target=checkIfUpdateWasNeeded)
+                    check_update_thread.start()
                 else:
-                    printDebugMessage("No RobloxInstance class was registered")
-            else:
-                printDebugMessage(f"Unknown scheme: {url}")
+                    printDebugMessage(f"Unknown scheme: {url}")
         else:
             if handler.getIfRobloxIsOpen():
                 printMainMessage("An existing Roblox Window is currently open. Would you like to restart it in order for changes to take effect?")
@@ -1644,33 +2245,42 @@ if __name__ == "__main__":
                 else:
                     os.system("exit")
                     exit()
-            threading.Thread(target=checkIfUpdateWasNeeded).start()
-            clas = handler.openRoblox(forceQuit=(not (fastFlagConfig.get("EFlagEnableDuplicationOfClients") == True)), debug=(fastFlagConfig.get("EFlagEnableDebugMode") == True), attachInstance=True, allowRobloxOtherLogDebug=(fastFlagConfig.get("EFlagAllowFullDebugMode") == True))
+            clas = handler.openRoblox(forceQuit=(not (fastFlagConfig.get("EFlagEnableDuplicationOfClients") == True)), debug=(fastFlagConfig.get("EFlagEnableDebugMode") == True), attachInstance=(not (fastFlagConfig.get("EFlagAllowActivityTracking") == False)), allowRobloxOtherLogDebug=(fastFlagConfig.get("EFlagAllowFullDebugMode") == True))
             if clas:
-                clas.setRobloxEventCallback("onGameEntry", onGameJoinInfo)
-                clas.setRobloxEventCallback("onGameJoined", onGameJoinFull)
-                clas.setRobloxEventCallback("onGameLeaving", onLeftServer)
+                clas.setRobloxEventCallback("onRobloxExit", onRobloxExit)
+                clas.setRobloxEventCallback("onRobloxCrash", onRobloxCrash)
+                clas.setRobloxEventCallback("onRobloxLog", onAllRobloxEvents)
+                clas.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
+                clas.setRobloxEventCallback("onGameStart", onGameStart)
+                clas.setRobloxEventCallback("onGameJoined", onGameJoined)
+                clas.setRobloxEventCallback("onGameDisconnected", onGameDisconnected)
                 clas.setRobloxEventCallback("onGameLoading", onMainServer)
                 clas.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
                 clas.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
+                clas.setRobloxEventCallback("onGameLoadingParty", onPartyServer)
                 clas.setRobloxEventCallback("onGameTeleport", onTeleport)
-
-                clas.setRobloxEventCallback("onRobloxExit", onRobloxExit)
-                clas.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
+                printSuccessMessage("Connected to Roblox Instance from log file for Activity Tracking!")
             else:
                 printDebugMessage("No RobloxInstance class was registered")
+            check_update_thread = threading.Thread(target=checkIfUpdateWasNeeded)
+            check_update_thread.start()
     def checkIfUpdateWasNeeded():
-        printMainMessage("Waiting 2 seconds to check if Roblox needs a reinstall..")
-        time.sleep(2)
-        if not (handler.getIfRobloxIsOpen()):
-            printMainMessage("An update is needed. Installing a fresh copy of Roblox!")
-            handler.installRoblox(forceQuit=(not (fastFlagConfig.get("EFlagEnableDuplicationOfClients") == True)), debug=(fastFlagConfig.get("EFlagEnableDebugMode") == True))
-            time.sleep(1)
-            prepareRoblox()
+        global updated_count
+        updated_count += 1
+        if updated_count < 3:
+            printMainMessage("Waiting 2 seconds to check if Roblox needs a reinstall..")
             time.sleep(2)
-            runRoblox()
+            if not (handler.getIfRobloxIsOpen()):
+                printMainMessage("An update is needed. Installing a fresh copy of Roblox!")
+                handler.installRoblox(forceQuit=(not (fastFlagConfig.get("EFlagEnableDuplicationOfClients") == True)), debug=(fastFlagConfig.get("EFlagEnableDebugMode") == True))
+                time.sleep(1)
+                prepareRoblox()
+                time.sleep(2)
+                runRoblox()
+            else:
+                printSuccessMessage("Roblox doesn't require any updates!")
         else:
-            printSuccessMessage("Roblox doesn't require any updates!")
+            printErrorMessage("Is Roblox crashing instantly..? Well, ending script here.")
     runRoblox()
     os.system("exit")
     exit()

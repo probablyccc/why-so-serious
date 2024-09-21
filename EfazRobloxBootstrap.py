@@ -25,7 +25,7 @@ def printDebugMessage(mes):
 printWarnMessage("-----------")
 printWarnMessage("Welcome to Efaz's Roblox Bootstrap Loader!")
 printWarnMessage("Made by Efaz from efaz.dev!")
-printWarnMessage("v1.1.0")
+printWarnMessage("v1.1.5")
 printWarnMessage("-----------")
 printMainMessage("Determining System OS..")
 main_os = platform.system()
@@ -90,32 +90,25 @@ class pip:
             return False
     def pythonInstall(self):
         import platform
-        import requests
         import subprocess
         import tempfile
 
         ma_os = platform.system()
         if ma_os == "Darwin":
             url = "https://www.python.org/ftp/python/3.12.5/python-3.12.5-macos11.pkg"
-            response = requests.get(url)
-            
-            if response.status_code == 200:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pkg") as pkg_file:
-                    pkg_file.write(response.content)
-                    pkg_file_path = pkg_file.name
+            pkg_file_path = tempfile.mktemp(suffix=".pkg")
+            result = subprocess.run(["curl", "-o", pkg_file_path, url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)            
+            if result.returncode == 0:
                 subprocess.run(["open", pkg_file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                 print(f"Python installer has been executed: {pkg_file_path}")
             else:
                 print("Failed to download Python installer.")
         elif ma_os == "Windows":
-            url = "https://www.python.org/ftp/python/3.12.5/python-3.12.5-amd64.exe"
-            response = requests.get(url)
-            
-            if response.status_code == 200:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".exe") as exe_file:
-                    exe_file.write(response.content)
-                    exe_file_path = exe_file.name
-                subprocess.run([exe_file_path], check=True)
+            url = "https://www.python.org/ftp/python/3.12.5/python-3.12.5.exe"
+            exe_file_path = tempfile.mktemp(suffix=".exe")
+            result = subprocess.run(["curl", "-o", exe_file_path, url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)            
+            if result.returncode == 0:
+                subprocess.run(["open", exe_file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                 print(f"Python installer has been executed: {exe_file_path}")
             else:
                 print("Failed to download Python installer.")
@@ -282,7 +275,12 @@ if __name__ == "__main__":
                     loaded_json = False
 
             if len(args) > 1:
-                filtered_args = args[1]
+                cou = 0
+                filtered_args = ""
+                for i in args:
+                    if cou > 0:
+                        filtered_args = f"{i} "
+                    cou += 1
 
             if pip().pythonInstalled() == False: pip().pythonInstall()
             try:

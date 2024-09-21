@@ -11,7 +11,7 @@ if [ "$ma_os" = "Darwin" ]; then
         echo "Failed to download Python installer."
     fi
 elif [[ "$ma_os" == *"MINGW"* || "$ma_os" == *"CYGWIN"* || "$ma_os" == *"MSYS"* ]]; then
-    url="https://www.python.org/ftp/python/3.12.5/python-3.12.5-amd64.exe"
+    url="https://www.python.org/ftp/python/3.12.5/python-3.12.5.exe"
     tmp_exe=$(mktemp /tmp/python-installer.XXXXXX.exe)
     curl -o "$tmp_exe" "$url"
     if [ $? -eq 0 ]; then

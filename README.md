@@ -23,12 +23,12 @@ Efaz's Roblox Bootstrap is a program inspired by Bloxstrap but using only Python
 
 ## Install
 1. Once you got all the requirements, run Install.py and once it says Success, you may use the Bootstrap now!
-2. [In order to configure settings, register URL Schemes or more, open the app by going to the Applications folder and open EfazRobloxBootstrapLoader.app]
+2. In order to configure settings or register URL Schemes, open the app by going to the Applications folder and open EfazRobloxBootstrapLoader.app on macOS or open EfazRobloxBootstrap.exe on Windows!
 
 ## Credits
 1. Main Coding by <span style="color:#FF8700">@EfazDev</span>
 2. Old Death Sound and Cursors were sourced from <span style="color:#FF5FFF">[Bloxstrap files](https://github.com/pizzaboxer/bloxstrap)</span>
 3. AvatarEditorMaps were from <span style="color:#FF00FF">[Mielesgames's Map Files](https://github.com/Mielesgames/RobloxAvatarEditorMaps)</span> slightly edited to be usable for the current version of Roblox (as of the time of writing this)
 4. Some files were exported from the main macOS Roblox.app or Bloxstrap files. <span style="color:#FF8700">(Logo was made by the Apple Pages app icon, recolored and then added the Roblox Logo)</span>
-5. macOS App was built using <span style="color:#00AFFF">pyinstaller</span>. You can recreate and deploy using this command: <span style="color:#00AFFF">pyinstaller EfazRobloxBootstrap.spec --distpath Apps --noconfirm && rm -rf build ./Apps/EfazRobloxBootstrapLoad/ && python3 Install.py --install</span> <span style="color:#FFFF00">[WARNING]: This command can only be used using native macOS so a virtual machine may be needed and can reduce security.</span>
+5. macOS App was built using <span style="color:#00AFFF">pyinstaller</span>. You can recreate and deploy using this command: <span style="color:#00AFFF">pyinstaller EfazRobloxBootstrap.spec --distpath Apps --noconfirm && zip -r -y ./Apps/EfazRobloxBootstrapMac.zip ./Apps/EfazRobloxBootstrap.app ./Apps/EfazRobloxBootstrapLoad.app && rm -rf ./build/ ./Apps/EfazRobloxBootstrapLoad/ && python3 Install.py --install</span> <span style="color:#FFFF00">[WARNING]: This command can only be used using native macOS so a virtual machine may be needed and can reduce security.</span>
 6. Windows App was also built using <span style="color:#00AFFF">pyinstaller</span>. You can recreate and deploy using this command: <span style="color:#00AFFF">pyinstaller EfazRobloxBootstrap_Windows.spec --distpath Apps --noconfirm && python Install.py --install</span> <span style="color:#FFFF00">[WARNING]: This command also can only be used using Windows and can reduce security.</span>
