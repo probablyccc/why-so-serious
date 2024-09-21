@@ -932,7 +932,7 @@ if __name__ == "__main__":
             generated_ui_options = []
             main_ui_options = {}
             if type(fastFlagConfig.get("EFlagRobloxLinkShortcuts")) is dict:
-                for i, v in fastFlagConfig.get("EFlagRobloxLinkShortcuts").values():
+                for i, v in fastFlagConfig.get("EFlagRobloxLinkShortcuts").items():
                     if v and v.get("name") and v.get("id") and v.get("url"):
                         generated_ui_options.append({"index": 1, "message": f"{v.get('name')} [{i}]", "shortcut_info": v})
             generated_ui_options.append({"index": 999999, "message": "Create a new shortcut"})
