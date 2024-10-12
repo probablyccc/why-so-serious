@@ -9,6 +9,7 @@
         "onRobloxPassedUpdate",
         "onGameDisconnected",
         "onGameJoined",
-        "onGameStart"
+        "fastFlagConfiguration",
+        "editModScript"
     ]
 }

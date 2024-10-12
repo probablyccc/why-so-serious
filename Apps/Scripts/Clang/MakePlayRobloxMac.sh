@@ -1,0 +1,1 @@
+clang++ -std=c++17 -arch x86_64 -arch arm64 -o EfazRobloxBootstrapPlayRoblox EfazRobloxBootstrapPlayRoblox.cpp
