@@ -27,7 +27,7 @@ if __name__ == "__main__":
     handler = RobloxFastFlagsInstaller.Main()
     fast_config_loaded = True
     multi_instance_enabled = False
-    current_version = {"version": "1.2.0"}
+    current_version = {"version": "1.2.1"}
     given_args = list(filter(None, sys.argv))
     pip_class = pip()
 
@@ -332,6 +332,10 @@ if __name__ == "__main__":
                             if "ModScript.py" in mod_mode_script_text and not ("editModScript" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("editModScript")
                             if "MacOSNotification" in mod_mode_script_text and not ("macNotification" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("macNotification")
                             if "ModModes" in mod_mode_script_text and not ("configureModModes" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureModModes")
+                            if "RobloxBrand" in mod_mode_script_text and not ("configureRobloxBranding" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureRobloxBranding")
+                            if "DeathSounds" in mod_mode_script_text and not ("configureDeathSounds" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureDeathSounds")
+                            if "Cursors" in mod_mode_script_text and not ("configureCursors" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureCursors")
+                            if "AvatarEditorMaps" in mod_mode_script_text and not ("configureAvatarMaps" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureAvatarMaps")
 
                             for i in res_json.get("mod_script_requirements", []):
                                 if type(i) is str and handler.robloxInstanceInfoNames.get(i):
@@ -701,7 +705,7 @@ if __name__ == "__main__":
                     if d.isnumeric():
                         fflag_configuration["EFlagDiscordWebhookUserId"] = d
                         printMainMessage("When should this Discord Webhook be notified?")
-                        printMainMessage("It should be notified when the client connects to a Roblox server. (y/n)")
+                        printMainMessage("[1/6] It should be notified when the client connects to a Roblox server. (y/n)")
                         d = input("> ")
                         if isYes(d) == True:
                             fflag_configuration["EFlagDiscordWebhookConnect"] = True
@@ -709,7 +713,7 @@ if __name__ == "__main__":
                         elif isNo(d) == True:
                             fflag_configuration["EFlagDiscordWebhookConnect"] = False
                             printDebugMessage("User selected: False")
-                        printMainMessage("It should be notified when the client disconnects from a server. (y/n)")
+                        printMainMessage("[2/6] It should be notified when the client disconnects from a server. (y/n)")
                         d = input("> ")
                         if isYes(d) == True:
                             fflag_configuration["EFlagDiscordWebhookDisconnect"] = True
@@ -717,13 +721,37 @@ if __name__ == "__main__":
                         elif isNo(d) == True:
                             fflag_configuration["EFlagDiscordWebhookDisconnect"] = False
                             printDebugMessage("User selected: False")
-                        printMainMessage("It should be notified when Roblox crashes. (y/n)")
+                        printMainMessage("[3/6] It should be notified when Roblox opens. (y/n)")
+                        d = input("> ")
+                        if isYes(d) == True:
+                            fflag_configuration["EFlagDiscordWebhookRobloxAppStart"] = True
+                            printDebugMessage("User selected: True")
+                        elif isNo(d) == True:
+                            fflag_configuration["EFlagDiscordWebhookRobloxAppStart"] = False
+                            printDebugMessage("User selected: False")
+                        printMainMessage("[4/6] It should be notified when Roblox closes. (y/n)")
+                        d = input("> ")
+                        if isYes(d) == True:
+                            fflag_configuration["EFlagDiscordWebhookRobloxAppClose"] = True
+                            printDebugMessage("User selected: True")
+                        elif isNo(d) == True:
+                            fflag_configuration["EFlagDiscordWebhookRobloxAppClose"] = False
+                            printDebugMessage("User selected: False")
+                        printMainMessage("[5/6] It should be notified when Roblox crashes. (y/n)")
                         d = input("> ")
                         if isYes(d) == True:
                             fflag_configuration["EFlagDiscordWebhookRobloxCrash"] = True
                             printDebugMessage("User selected: True")
                         elif isNo(d) == True:
                             fflag_configuration["EFlagDiscordWebhookRobloxCrash"] = False
+                            printDebugMessage("User selected: False")
+                        printMainMessage("[6/6] It should be notified when Bloxstrap RPC is triggered. (y/n)")
+                        d = input("> ")
+                        if isYes(d) == True:
+                            fflag_configuration["EFlagDiscordWebhookBloxstrapRPC"] = True
+                            printDebugMessage("User selected: True")
+                        elif isNo(d) == True:
+                            fflag_configuration["EFlagDiscordWebhookBloxstrapRPC"] = False
                             printDebugMessage("User selected: False")
                 else:
                     fflag_configuration["EFlagUseDiscordWebhook"] = False
@@ -851,14 +879,15 @@ if __name__ == "__main__":
         printMainMessage("1. Made by \033[38;5;202m@EfazDev\033[0m")
         printMainMessage("2. Old Death Sound and Cursors were sourced from \033[38;5;165mBloxstrap files (https://github.com/pizzaboxer/bloxstrap)\033[0m")
         printMainMessage("3. AvatarEditorMaps were from \033[38;5;197mMielesgames's Map Files (https://github.com/Mielesgames/RobloxAvatarEditorMaps)\033[0m slightly edited to be usable for the current version of Roblox (as of the time of writing this)")
-        printMainMessage("4. Some files were exported from the main macOS Roblox.app files. \033[38;5;202m(Logo was made using the Apple Pages icon, hued and then added the Roblox Logo)\033[0m")
-        printMainMessage(f'5. macOS App was built using \033[38;5;39mpyinstaller\033[0m. You can recreate and deploy using this command (macOS only): \033[38;5;39mpyinstaller ./Apps/Scripts/Pyinstaller/EfazRobloxBootstrap.spec --distpath Apps --noconfirm && zip -r -y ./Apps/EfazRobloxBootstrapMac.zip "./Apps/EfazRobloxBootstrap.app" "./Apps/PlayRoblox" "./Apps/EfazRobloxBootstrapLoad.app" && rm -rf ./build/ ./Apps/EfazRobloxBootstrapLoad/ && {sys.executable} Install.py --install --disable-remove\033[0m')
-        if platform.architecture()[0] == "32bit":
-            printMainMessage(f"6. Windows App was also built using \033[38;5;39mpyinstaller\033[0m. You can recreate and deploy using this command (windows only): \033[38;5;39mpyinstaller ./Apps/Scripts/Pyinstaller/EfazRobloxBootstrap_Windows32.spec --distpath Apps --noconfirm && move Apps\\EfazRobloxBootstrap32\\PlayRoblox32.exe Apps\\PlayRoblox\\ && {sys.executable} Install.py --install --disable-remove\033[0m")
-        else:
-            printMainMessage(f"6. Windows App was also built using \033[38;5;39mpyinstaller\033[0m. You can recreate and deploy using this command (windows only): \033[38;5;39mpyinstaller ./Apps/Scripts/Pyinstaller/EfazRobloxBootstrap_Windows.spec --distpath Apps --noconfirm && move Apps\\EfazRobloxBootstrap\\PlayRoblox.exe Apps\\PlayRoblox\\ && {sys.executable} Install.py --install --disable-remove\033[0m")
+        printMainMessage("4. Some files were exported from the main macOS Roblox.app files. \033[38;5;202m(Logo was from the Apple Pages icon, recolored and then added the Roblox Logo)\033[0m")
+        if main_os == "Darwin":
+            printMainMessage(f'5. macOS App was built using \033[38;5;39mpyinstaller\033[0m. You can recreate and deploy using this command (macOS only): \033[38;5;39mpyinstaller ./Apps/Scripts/Pyinstaller/EfazRobloxBootstrap.spec --distpath Apps --noconfirm && zip -r -y ./Apps/EfazRobloxBootstrapMac.zip "./Apps/EfazRobloxBootstrap.app" "./Apps/PlayRoblox" "./Apps/EfazRobloxBootstrapLoad.app" && rm -rf ./build/ ./Apps/EfazRobloxBootstrapLoad/ && {sys.executable} Install.py --install --disable-remove\033[0m')
+        elif main_os == "Windows":
+            if platform.architecture()[0] == "32bit":
+                printMainMessage(f"5. Windows App was also built using \033[38;5;39mpyinstaller\033[0m. You can recreate and deploy using this command (windows only): \033[38;5;39mpyinstaller ./Apps/Scripts/Pyinstaller/EfazRobloxBootstrap_Windows32.spec --distpath Apps --noconfirm && move Apps\\EfazRobloxBootstrap32\\PlayRoblox32.exe Apps\\PlayRoblox\\ && {sys.executable} Install.py --install --disable-remove\033[0m")
+            else:
+                printMainMessage(f"5. Windows App was also built using \033[38;5;39mpyinstaller\033[0m. You can recreate and deploy using this command (windows only): \033[38;5;39mpyinstaller ./Apps/Scripts/Pyinstaller/EfazRobloxBootstrap_Windows.spec --distpath Apps --noconfirm && move Apps\\EfazRobloxBootstrap\\PlayRoblox.exe Apps\\PlayRoblox\\ && {sys.executable} Install.py --install --disable-remove\033[0m")
         printDebugMessage(f"Operating System: {main_os}")
-        printDebugMessage(f"Debug Mode Enabled")
     def handleOption8(): # End All Roblox Instances
         printWarnMessage("--- End All Roblox Instances ---")
         printMainMessage("Are you sure you want to end all currently open Roblox instances?")
@@ -1655,6 +1684,18 @@ if __name__ == "__main__":
                         if "ModModes" in mod_mode_script_text:
                             if not ("configureModModes" in approved_items_list):
                                 approved_through_scan = False
+                        if "RobloxBrand" in mod_mode_script_text:
+                            if not ("configureRobloxBranding" in approved_items_list):
+                                approved_through_scan = False
+                        if "DeathSounds" in mod_mode_script_text:
+                            if not ("configureDeathSounds" in approved_items_list):
+                                approved_through_scan = False
+                        if "Cursors" in mod_mode_script_text:
+                            if not ("configureCursors" in approved_items_list):
+                                approved_through_scan = False
+                        if "AvatarEditorMaps" in mod_mode_script_text:
+                            if not ("configureAvatarMaps" in approved_items_list):
+                                approved_through_scan = False
 
                         if approved_through_scan == True:
                             printDebugMessage("Connecting to mod mode script..")
@@ -1683,6 +1724,7 @@ if __name__ == "__main__":
     is_teleport = False
     connected_user_info = None
     updated_count = 0
+    connected_roblox_instance = None
 
     # Event Functions
     def onGameJoined(info):
@@ -1839,6 +1881,13 @@ if __name__ == "__main__":
                                                         launch_data = f'{launch_data}?gameInstanceId={current_place_info["jobId"]}'
                                                     else:
                                                         launch_data = f'{launch_data}&gameInstanceId={current_place_info["jobId"]}'
+                                                cur_time = int(datetime.datetime.now(tz=datetime.UTC).timestamp())
+                                                if formatted_info.get("stop") and formatted_info.get("stop") < cur_time:
+                                                    formatted_info["stop"] = None
+                                                    formatted_info["start"] = None
+                                                if formatted_info.get("start") and formatted_info.get("start") > cur_time:
+                                                    formatted_info["start"] = None
+                                                    formatted_info["stop"] = None
                                                 formatted_info["launch_data"] = launch_data
                                                 try:
                                                     isInstance = False
@@ -1917,6 +1966,7 @@ if __name__ == "__main__":
                                         printSuccessMessage("Successfully installed modules!")
                                     if fflag_configuration.get("EFlagDiscordWebhookURL"):
                                         title = "Joined Server!"
+                                        color = 65280
                                         if setTypeOfServer == 0:
                                             title = "Joined Public Server!"
                                         elif setTypeOfServer == 1:
@@ -1925,6 +1975,7 @@ if __name__ == "__main__":
                                             title = "Joined Reserved Server!"
                                         elif setTypeOfServer == 3:
                                             title = "Joined Party!"
+                                            color = 5570815
                                         else:
                                             title = "Joined Server!"
                                         launch_data = ""
@@ -1952,7 +2003,7 @@ if __name__ == "__main__":
                                             "embeds": [
                                                 {
                                                     "title": title,
-                                                    "color": 65280,
+                                                    "color": color,
                                                     "fields": [
                                                         {
                                                             "name": "Connected Game",
@@ -1986,19 +2037,25 @@ if __name__ == "__main__":
                                                     },
                                                     "thumbnail": {
                                                         "url": thumbnail_url
-                                                    }
+                                                    },
+                                                    "footer": {
+                                                        "text": "Made by @EfazDev",
+                                                        "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
+                                                    },
+                                                    "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
                                                 }
                                             ],
-                                            "attachments": []
+                                            "attachments": [],
                                         }
                                         try:
                                             req = requests.post(fflag_configuration.get("EFlagDiscordWebhookURL"), json=generated_body)
                                             if req.ok:
-                                                printDebugMessage("Successfully sent webhook!")
+                                                printDebugMessage("Successfully sent webhook! Event: onGameJoined")
                                             else:
-                                                printErrorMessage("There was an issue sending your webhook message. Is it valid?")
+                                                printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
+                                                printDebugMessage(f"Response: {req.text} | Status Code: {req.status_code}")
                                         except Exception as e:
-                                            printErrorMessage("There was an issue sending your webhook message. Is it valid?")
+                                            printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
                             except Exception as e:
                                 rpc = None
                                 printDebugMessage("Unable to insert Discord Rich Presence. Please make sure Discord is open.")
@@ -2131,7 +2188,12 @@ if __name__ == "__main__":
                                 },
                                 "thumbnail": {
                                     "url": thumbnail_url
-                                }
+                                },
+                                "footer": {
+                                    "text": "Made by @EfazDev",
+                                    "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
+                                },
+                                "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
                             }
                         ],
                         "attachments": []
@@ -2139,11 +2201,12 @@ if __name__ == "__main__":
                     try:
                         req = requests.post(fflag_configuration.get("EFlagDiscordWebhookURL"), json=generated_body)
                         if req.ok:
-                            printDebugMessage("Successfully sent webhook!")
+                            printDebugMessage("Successfully sent webhook!  Event: onGameDisconnected")
                         else:
-                            printErrorMessage("There was an issue sending your webhook message. Is it valid?")
+                            printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
+                            printDebugMessage(f"Response: {req.text} | Status Code: {req.status_code}")
                     except Exception as e:
-                        printErrorMessage("There was an issue sending your webhook message. Is it valid?")
+                        printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
         if fflag_configuration.get("EFlagEnableDiscordRPC") == True:
             global rpc
             global rpc_info
@@ -2162,29 +2225,118 @@ if __name__ == "__main__":
             global rpc
             global rpc_info
             if info.get("command"):
+                went_through = False
+                data_names = {
+                    "details": "Details",
+                    "state": "State",
+                    "timeStart": "Round Starting",
+                    "timeEnd": "Round Ending",
+                    "largeImage": "Large Image",
+                    "launch_data": "URL Launch Data"
+                }
+                passed_data = {}
                 if info["command"] == "SetRichPresence":
                     if rpc:
                         if rpc_info == None:
                             rpc_info = {}
                         if type(info["data"]) is dict:
-                            if type(info["data"].get("details")) is str or type(info["data"].get("details")) is None: rpc_info["details"] = info["data"].get("details")
-                            if type(info["data"].get("state")) is str or type(info["data"].get("state")) is None: rpc_info["state"] = info["data"].get("state")
-                            if type(info["data"].get("timeStart")) is int or type(info["data"].get("timeStart")) is None or type(info["data"].get("timeStart")) is float: rpc_info["start"] = info["data"].get("timeStart")
-                            if type(info["data"].get("timeEnd")) is int or type(info["data"].get("timeEnd")) is None or type(info["data"].get("timeEnd")) is float: rpc_info["stop"] = info["data"].get("timeEnd")
+                            if type(info["data"].get("details")) is str or type(info["data"].get("details")) is None: 
+                                rpc_info["details"] = info["data"].get("details")
+                                passed_data[data_names["details"]] = info["data"].get("details")
+                            if type(info["data"].get("state")) is str or type(info["data"].get("state")) is None: 
+                                rpc_info["state"] = info["data"].get("state")
+                                passed_data[data_names["state"]] = info["data"].get("state")
+                            if type(info["data"].get("timeStart")) is int or type(info["data"].get("timeStart")) is None or type(info["data"].get("timeStart")) is float: 
+                                rpc_info["start"] = info["data"].get("timeStart")
+                                passed_data[data_names["timeStart"]] = f'<t:{info["data"].get("timeStart")}:R>'
+                            if type(info["data"].get("timeEnd")) is int or type(info["data"].get("timeEnd")) is None or type(info["data"].get("timeEnd")) is float: 
+                                rpc_info["stop"] = info["data"].get("timeEnd")
+                                passed_data[data_names["timeEnd"]] = f'<t:{info["data"].get("timeEnd")}:R>'
                             if type(info["data"].get("largeImage")) is dict: 
-                                if type(info["data"]["largeImage"].get("assetId")) is int: rpc_info["large_image"] = f'https://assetdelivery.roblox.com/v1/asset/?id={info["data"]["largeImage"]["assetId"]}'
-                                if type(info["data"]["largeImage"].get("hoverText")) is str: rpc_info["large_text"] = info["data"]["largeImage"]["hoverText"]
+                                link = info["data"]["largeImage"].get("assetId")
+                                if link and type(link) is int:
+                                    link = f"[Image](https://assetdelivery.roblox.com/v1/asset/?id={link})"
+                                else:
+                                    link = "None"
+                                if type(info["data"]["largeImage"].get("assetId")) is int: 
+                                    rpc_info["large_image"] = f'https://assetdelivery.roblox.com/v1/asset/?id={info["data"]["largeImage"]["assetId"]}'
+                                if type(info["data"]["largeImage"].get("hoverText")) is str: 
+                                    rpc_info["large_text"] = info["data"]["largeImage"]["hoverText"]
+                                passed_data[data_names["largeImage"]] = f'{info["data"]["largeImage"].get("hoverText", None)} | {link}'
                             elif type(info["data"].get("largeImage")) is None:
                                 rpc_info["large_image"] = None
                                 rpc_info["large_text"] = None
+                                passed_data[data_names["largeImage"]] = f'None'
+                            went_through = True
                 elif info["command"] == "SetLaunchData":
                     if rpc:
                         if rpc_info == None:
                             rpc_info = {}
-                        if type(info["data"]) is str: rpc_info["launch_data"] = info["data"].get("launch_data")
+                        if type(info["data"]) is str: 
+                            rpc_info["launch_data"] = info["data"].get("launch_data")
+                            passed_data[data_names["launch_data"]] = info["data"].get("launch_data")
+                        went_through = True
+                if went_through == True and fflag_configuration.get("EFlagUseDiscordWebhook") == True and fflag_configuration.get("EFlagDiscordWebhookBloxstrapRPC") == True:
+                    try:
+                        
+                        import requests
+                    except Exception as e:
+                        pip_class.install(["requests"])
+                        import requests
+                        printSuccessMessage("Successfully installed modules!")
+                    if fflag_configuration.get("EFlagDiscordWebhookURL"):
+                        thumbnail_url = "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/Bloxstrap.png"
+                        embed_fields = [
+                            {
+                                "name": "Requested Command",
+                                "value": info["command"],
+                                "inline": True
+                            }
+                        ]
+                        for i, v in passed_data.items():
+                            embed_fields.append({
+                                "name": i,
+                                "value": v,
+                                "inline": True
+                            })
+                        generated_body = {
+                            "content": f"<@{fflag_configuration.get('EFlagDiscordWebhookUserId')}>",
+                            "embeds": [
+                                {
+                                    "title": "Bloxstrap RPC Changed",
+                                    "color": 12517631,
+                                    "fields": embed_fields,
+                                    "author": {
+                                        "name": "Efaz's Roblox Bootstrap",
+                                        "icon_url": "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/DiscordIcon.png"
+                                    },
+                                    "thumbnail": {
+                                        "url": thumbnail_url
+                                    },
+                                    "footer": {
+                                        "text": "Made by @EfazDev",
+                                        "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
+                                    },
+                                    "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                                }
+                            ],
+                            "attachments": []
+                        }
+                        try:
+                            req = requests.post(fflag_configuration.get("EFlagDiscordWebhookURL"), json=generated_body)
+                            if req.ok:
+                                printDebugMessage("Successfully sent webhook!  Event: onRobloxStart")
+                            else:
+                                printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
+                                printDebugMessage(f"Response: {req.text} | Status Code: {req.status_code}")
+                        except Exception as e:
+                            printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
     def onRobloxExit(consoleLine):
         printDebugMessage("User has closed the Roblox window!")
-        printErrorMessage("Roblox window was closed! Closing Bootstrap App..")
+        if connected_roblox_instance.created_mutex == True and handler.getIfRobloxIsOpen(pid=connected_roblox_instance.pid):
+            printYellowMessage("This process is handling multi-instance for all open Roblox windows. If you close this window, all Roblox windows may close.")
+        else:
+            printErrorMessage("Roblox window was closed! Closing Bootstrap App..")
         if fflag_configuration.get("EFlagEnableDiscordRPC") == True:
             global rpc
             global rpc_info
@@ -2196,6 +2348,65 @@ if __name__ == "__main__":
             rpc = None
             rpc_info = None
             current_place_info = None
+        if fflag_configuration.get("EFlagUseDiscordWebhook") == True and fflag_configuration.get("EFlagDiscordWebhookRobloxAppClose") == True:
+            try:
+                import requests
+            except Exception as e:
+                pip_class.install(["requests"])
+                import requests
+                printSuccessMessage("Successfully installed modules!")
+            if fflag_configuration.get("EFlagDiscordWebhookURL"):
+                thumbnail_url = "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/RobloxLogo.png"
+                embed_fields = [
+                    {
+                        "name": "Disconnected PID",
+                        "value": connected_roblox_instance.pid,
+                        "inline": True
+                    },
+                    {
+                        "name": "Log Location",
+                        "value": connected_roblox_instance.main_log_file,
+                        "inline": True
+                    }
+                ]
+                if main_os == "Windows" and (fflag_configuration.get("EFlagEnableDuplicationOfClients") == True):
+                    embed_fields.append({
+                        "name": "Handles Roblox Multi-Instance",
+                        "value": str(connected_roblox_instance.created_mutex == True),
+                        "inline": True
+                    })
+                generated_body = {
+                    "content": f"<@{fflag_configuration.get('EFlagDiscordWebhookUserId')}>",
+                    "embeds": [
+                        {
+                            "title": "Roblox Closed!",
+                            "color": 16735838,
+                            "fields": embed_fields,
+                            "author": {
+                                "name": "Efaz's Roblox Bootstrap",
+                                "icon_url": "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/DiscordIcon.png"
+                            },
+                            "thumbnail": {
+                                "url": thumbnail_url
+                            },
+                            "footer": {
+                                "text": "Made by @EfazDev",
+                                "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
+                            },
+                            "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                        }
+                    ],
+                    "attachments": []
+                }
+                try:
+                    req = requests.post(fflag_configuration.get("EFlagDiscordWebhookURL"), json=generated_body)
+                    if req.ok:
+                        printDebugMessage("Successfully sent webhook! Event: onRobloxExit")
+                    else:
+                        printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
+                        printDebugMessage(f"Response: {req.text} | Status Code: {req.status_code}")
+                except Exception as e:
+                    printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
         sys.exit(0)
     def onGameUserInfo(data):
         global connected_user_info
@@ -2236,7 +2447,12 @@ if __name__ == "__main__":
                             },
                             "thumbnail": {
                                 "url": thumbnail_url
-                            }
+                            },
+                            "footer": {
+                                "text": "Made by @EfazDev",
+                                "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
+                            },
+                            "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
                         }
                     ],
                     "attachments": []
@@ -2244,12 +2460,72 @@ if __name__ == "__main__":
                 try:
                     req = requests.post(fflag_configuration.get("EFlagDiscordWebhookURL"), json=generated_body)
                     if req.ok:
-                        printDebugMessage("Successfully sent webhook!")
+                        printDebugMessage("Successfully sent webhook! Event: onRobloxCrash")
                     else:
-                        printErrorMessage("There was an issue sending your webhook message. Is it valid?")
+                        printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
+                        printDebugMessage(f"Response: {req.text} | Status Code: {req.status_code}")
                 except Exception as e:
-                    printErrorMessage("There was an issue sending your webhook message. Is it valid?")
-
+                    printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
+    def onRobloxAppStart(consoleLine):
+        if fflag_configuration.get("EFlagUseDiscordWebhook") == True and fflag_configuration.get("EFlagDiscordWebhookRobloxAppStart") == True:
+            try:
+                import requests
+            except Exception as e:
+                pip_class.install(["requests"])
+                import requests
+                printSuccessMessage("Successfully installed modules!")
+            if fflag_configuration.get("EFlagDiscordWebhookURL"):
+                thumbnail_url = "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/RobloxLogo.png"
+                embed_fields = [
+                    {
+                        "name": "Connected PID",
+                        "value": connected_roblox_instance.pid,
+                        "inline": True
+                    },
+                    {
+                        "name": "Log Location",
+                        "value": connected_roblox_instance.main_log_file,
+                        "inline": True
+                    }
+                ]
+                if main_os == "Windows" and (fflag_configuration.get("EFlagEnableDuplicationOfClients") == True):
+                    embed_fields.append({
+                        "name": "Handles Roblox Multi-Instance",
+                        "value": str(connected_roblox_instance.created_mutex == True),
+                        "inline": True
+                    })
+                generated_body = {
+                    "content": f"<@{fflag_configuration.get('EFlagDiscordWebhookUserId')}>",
+                    "embeds": [
+                        {
+                            "title": "Roblox Started!",
+                            "color": 6225823,
+                            "fields": embed_fields,
+                            "author": {
+                                "name": "Efaz's Roblox Bootstrap",
+                                "icon_url": "https://raw.githubusercontent.com/EfazDev/roblox-bootstrap/main/BootstrapImages/DiscordIcon.png"
+                            },
+                            "thumbnail": {
+                                "url": thumbnail_url
+                            },
+                            "footer": {
+                                "text": "Made by @EfazDev",
+                                "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
+                            },
+                            "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                        }
+                    ],
+                    "attachments": []
+                }
+                try:
+                    req = requests.post(fflag_configuration.get("EFlagDiscordWebhookURL"), json=generated_body)
+                    if req.ok:
+                        printDebugMessage("Successfully sent webhook!  Event: onRobloxStart")
+                    else:
+                        printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
+                        printDebugMessage(f"Response: {req.text} | Status Code: {req.status_code}")
+                except Exception as e:
+                    printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
     def onAllRobloxEvents(data):
         if fflag_configuration.get("EFlagEnableModModes") == True:
             if fflag_configuration.get("EFlagSelectedModMode") and fflag_configuration.get("EFlagEnableModModeScripts") == True and os.path.exists(os.path.join(os.path.curdir, "ModModes", fflag_configuration.get("EFlagSelectedModMode"), "ModScript.py")):
@@ -2304,32 +2580,34 @@ if __name__ == "__main__":
 
     # Launch Roblox
     def runRoblox():
+        global connected_roblox_instance
         if multi_instance_enabled == True:
             printDebugMessage(f"Opening extra Roblox window..")
-            clas = handler.openRoblox(
+            connected_roblox_instance = handler.openRoblox(
                 forceQuit=False,
                 makeDupe=True, 
                 debug=(fflag_configuration.get("EFlagEnableDebugMode") == True), 
                 attachInstance=(not (fflag_configuration.get("EFlagAllowActivityTracking") == False)), 
                 allowRobloxOtherLogDebug=(fflag_configuration.get("EFlagAllowFullDebugMode") == True)
             )
-            if clas:
-                clas.setRobloxEventCallback("onRobloxExit", onRobloxExit)
-                clas.setRobloxEventCallback("onRobloxCrash", onRobloxCrash)
-                clas.setRobloxEventCallback("onRobloxLog", onAllRobloxEvents)
-                clas.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
-                clas.setRobloxEventCallback("onLoadedFFlags", onLoadedFFlags)
-                clas.setRobloxEventCallback("onGameStart", onGameStart)
-                clas.setRobloxEventCallback("onGameJoined", onGameJoined)
-                clas.setRobloxEventCallback("onGameJoinInfo", onGameUserInfo)
-                clas.setRobloxEventCallback("onGameDisconnected", onGameDisconnected)
-                clas.setRobloxEventCallback("onGameLoading", onMainServer)
-                clas.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
-                clas.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
-                clas.setRobloxEventCallback("onGameLoadingParty", onPartyServer)
-                clas.setRobloxEventCallback("onGameTeleport", onTeleport)
+            if connected_roblox_instance:
+                connected_roblox_instance.setRobloxEventCallback("onRobloxAppStart", onRobloxAppStart)
+                connected_roblox_instance.setRobloxEventCallback("onRobloxExit", onRobloxExit)
+                connected_roblox_instance.setRobloxEventCallback("onRobloxCrash", onRobloxCrash)
+                connected_roblox_instance.setRobloxEventCallback("onRobloxLog", onAllRobloxEvents)
+                connected_roblox_instance.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
+                connected_roblox_instance.setRobloxEventCallback("onLoadedFFlags", onLoadedFFlags)
+                connected_roblox_instance.setRobloxEventCallback("onGameStart", onGameStart)
+                connected_roblox_instance.setRobloxEventCallback("onGameJoined", onGameJoined)
+                connected_roblox_instance.setRobloxEventCallback("onGameJoinInfo", onGameUserInfo)
+                connected_roblox_instance.setRobloxEventCallback("onGameDisconnected", onGameDisconnected)
+                connected_roblox_instance.setRobloxEventCallback("onGameLoading", onMainServer)
+                connected_roblox_instance.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
+                connected_roblox_instance.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
+                connected_roblox_instance.setRobloxEventCallback("onGameLoadingParty", onPartyServer)
+                connected_roblox_instance.setRobloxEventCallback("onGameTeleport", onTeleport)
                 printSuccessMessage("Connected to Roblox Instance from log file for Activity Tracking!")
-                if clas.created_mutex == True:
+                if connected_roblox_instance.created_mutex == True:
                     printSuccessMessage("Successfully connected for multi-instancing! Please know that this effect is active until all Roblox windows are closed or this bootstrap window is closed.")
             else:
                 printDebugMessage("No RobloxInstance class was registered")
@@ -2345,7 +2623,7 @@ if __name__ == "__main__":
             if url:
                 if ("roblox-player:" in url) or ("roblox:" in url) or ("efaz-bootstrap" in url and "continue" in url) or ("efaz-bootstrap" in url and "new" in url) or ("efaz-bootstrap" in url and "menu" in url):
                     printDebugMessage(f"Running using Roblox URL: {url}")
-                    clas = handler.openRoblox(
+                    connected_roblox_instance = handler.openRoblox(
                         forceQuit=(not (fflag_configuration.get("EFlagEnableDuplicationOfClients") == True)), 
                         makeDupe=(fflag_configuration.get("EFlagEnableDuplicationOfClients") == True), 
                         debug=(fflag_configuration.get("EFlagEnableDebugMode") == True), 
@@ -2353,23 +2631,24 @@ if __name__ == "__main__":
                         attachInstance=(not (fflag_configuration.get("EFlagAllowActivityTracking") == False)), 
                         allowRobloxOtherLogDebug=(fflag_configuration.get("EFlagAllowFullDebugMode") == True)
                     )
-                    if clas:
-                        clas.setRobloxEventCallback("onRobloxExit", onRobloxExit)
-                        clas.setRobloxEventCallback("onRobloxCrash", onRobloxCrash)
-                        clas.setRobloxEventCallback("onRobloxLog", onAllRobloxEvents)
-                        clas.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
-                        clas.setRobloxEventCallback("onLoadedFFlags", onLoadedFFlags)
-                        clas.setRobloxEventCallback("onGameStart", onGameStart)
-                        clas.setRobloxEventCallback("onGameJoined", onGameJoined)
-                        clas.setRobloxEventCallback("onGameJoinInfo", onGameUserInfo)
-                        clas.setRobloxEventCallback("onGameDisconnected", onGameDisconnected)
-                        clas.setRobloxEventCallback("onGameLoading", onMainServer)
-                        clas.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
-                        clas.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
-                        clas.setRobloxEventCallback("onGameLoadingParty", onPartyServer)
-                        clas.setRobloxEventCallback("onGameTeleport", onTeleport)
+                    if connected_roblox_instance:
+                        connected_roblox_instance.setRobloxEventCallback("onRobloxAppStart", onRobloxAppStart)
+                        connected_roblox_instance.setRobloxEventCallback("onRobloxExit", onRobloxExit)
+                        connected_roblox_instance.setRobloxEventCallback("onRobloxCrash", onRobloxCrash)
+                        connected_roblox_instance.setRobloxEventCallback("onRobloxLog", onAllRobloxEvents)
+                        connected_roblox_instance.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
+                        connected_roblox_instance.setRobloxEventCallback("onLoadedFFlags", onLoadedFFlags)
+                        connected_roblox_instance.setRobloxEventCallback("onGameStart", onGameStart)
+                        connected_roblox_instance.setRobloxEventCallback("onGameJoined", onGameJoined)
+                        connected_roblox_instance.setRobloxEventCallback("onGameJoinInfo", onGameUserInfo)
+                        connected_roblox_instance.setRobloxEventCallback("onGameDisconnected", onGameDisconnected)
+                        connected_roblox_instance.setRobloxEventCallback("onGameLoading", onMainServer)
+                        connected_roblox_instance.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
+                        connected_roblox_instance.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
+                        connected_roblox_instance.setRobloxEventCallback("onGameLoadingParty", onPartyServer)
+                        connected_roblox_instance.setRobloxEventCallback("onGameTeleport", onTeleport)
                         printSuccessMessage("Connected to Roblox Instance from log file for Activity Tracking!")
-                        if clas.created_mutex == True:
+                        if connected_roblox_instance.created_mutex == True:
                             printSuccessMessage("Successfully connected for multi-instancing! Please know that this effect is active until all Roblox windows are closed or this bootstrap window is closed.")
                     else:
                         printDebugMessage("No RobloxInstance class was registered")
@@ -2385,28 +2664,29 @@ if __name__ == "__main__":
                     handler.endRoblox()
                 else:
                     sys.exit(0)
-            clas = handler.openRoblox(
+            connected_roblox_instance = handler.openRoblox(
                 forceQuit=True, 
                 makeDupe=False,
                 debug=(fflag_configuration.get("EFlagEnableDebugMode") == True), 
                 attachInstance=(not (fflag_configuration.get("EFlagAllowActivityTracking") == False)), 
                 allowRobloxOtherLogDebug=(fflag_configuration.get("EFlagAllowFullDebugMode") == True)
             )
-            if clas:
-                clas.setRobloxEventCallback("onRobloxExit", onRobloxExit)
-                clas.setRobloxEventCallback("onRobloxCrash", onRobloxCrash)
-                clas.setRobloxEventCallback("onRobloxLog", onAllRobloxEvents)
-                clas.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
-                clas.setRobloxEventCallback("onLoadedFFlags", onLoadedFFlags)
-                clas.setRobloxEventCallback("onGameStart", onGameStart)
-                clas.setRobloxEventCallback("onGameJoined", onGameJoined)
-                clas.setRobloxEventCallback("onGameJoinInfo", onGameUserInfo)
-                clas.setRobloxEventCallback("onGameDisconnected", onGameDisconnected)
-                clas.setRobloxEventCallback("onGameLoading", onMainServer)
-                clas.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
-                clas.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
-                clas.setRobloxEventCallback("onGameLoadingParty", onPartyServer)
-                clas.setRobloxEventCallback("onGameTeleport", onTeleport)
+            if connected_roblox_instance:
+                connected_roblox_instance.setRobloxEventCallback("onRobloxAppStart", onRobloxAppStart)
+                connected_roblox_instance.setRobloxEventCallback("onRobloxExit", onRobloxExit)
+                connected_roblox_instance.setRobloxEventCallback("onRobloxCrash", onRobloxCrash)
+                connected_roblox_instance.setRobloxEventCallback("onRobloxLog", onAllRobloxEvents)
+                connected_roblox_instance.setRobloxEventCallback("onBloxstrapSDK", onBloxstrapMessage)
+                connected_roblox_instance.setRobloxEventCallback("onLoadedFFlags", onLoadedFFlags)
+                connected_roblox_instance.setRobloxEventCallback("onGameStart", onGameStart)
+                connected_roblox_instance.setRobloxEventCallback("onGameJoined", onGameJoined)
+                connected_roblox_instance.setRobloxEventCallback("onGameJoinInfo", onGameUserInfo)
+                connected_roblox_instance.setRobloxEventCallback("onGameDisconnected", onGameDisconnected)
+                connected_roblox_instance.setRobloxEventCallback("onGameLoading", onMainServer)
+                connected_roblox_instance.setRobloxEventCallback("onGameLoadingPrivate", onPrivateServer)
+                connected_roblox_instance.setRobloxEventCallback("onGameLoadingReserved", onReservedServer)
+                connected_roblox_instance.setRobloxEventCallback("onGameLoadingParty", onPartyServer)
+                connected_roblox_instance.setRobloxEventCallback("onGameTeleport", onTeleport)
                 printSuccessMessage("Connected to Roblox Instance from log file for Activity Tracking!")
             else:
                 printDebugMessage("No RobloxInstance class was registered")

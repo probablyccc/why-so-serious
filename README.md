@@ -17,7 +17,7 @@
 </p>
 
 ## What is this?
-Efaz's Roblox Bootstrap is a program inspired by Bloxstrap made for macOS and Windows! It also uses [Activity Tracking](https://github.com/pizzaboxer/bloxstrap/wiki/What-is-activity-tracking%3F) and supports [BloxstrapRPC](https://github.com/pizzaboxer/bloxstrap/wiki/Integrating-Bloxstrap-functionality-into-your-game)!
+Efaz's Roblox Bootstrap is a program inspired by Bloxstrap made for macOS and Windows! It also uses [Activity Tracking](https://github.com/pizzaboxer/bloxstrap/wiki/What-is-activity-tracking%3F), supports [BloxstrapRPC](https://github.com/pizzaboxer/bloxstrap/wiki/Integrating-Bloxstrap-functionality-into-your-game) and lot more!
 
 ## Features
 1. Set FFlag Customizations on your Roblox installation!
@@ -25,6 +25,10 @@ Efaz's Roblox Bootstrap is a program inspired by Bloxstrap made for macOS and Wi
 3. Use multiple instances directly by launching from your default web browser or the EfazRobloxBootstrap app!
 4. Get server locations when joining (also uses ipinfo.io like Bloxstrap)
 5. Discord Rich Presences [Includes Support for BloxstrapRPC]
+6. Discord Webhooks [Join, Disconnect, Teleport, Crash, App Start, App Close Notifications]
+7. Run Python Scripts based on events ran on the Roblox client using Mod Mode Scripts!
+8. Play Roblox app so you can run Roblox directly!
+9. Read Logs from Roblox using RobloxFastFlagsInstaller and Debug Mode!
 
 ## Requirements
 1. [Full ZIP file](https://github.com/EfazDev/roblox-bootstrap/archive/refs/heads/main.zip)
@@ -32,14 +36,16 @@ Efaz's Roblox Bootstrap is a program inspired by Bloxstrap made for macOS and Wi
 3. Python Modules: pip install pypresence posix-ipc requests plyer (For Windows: pip install pypresence requests pywin32 plyer posix-ipc)
 
 ## Install
-1. Once you got all the requirements, run Install.py and once it says Success, you may use the Bootstrap now!
-2. In order to configure settings or register URL Schemes, open the app by going to the Applications folder and open EfazRobloxBootstrapLoader.app on macOS or open EfazRobloxBootstrap.exe on Windows!
+1. Once you got all the requirements, run Install.py
+2. Complete the installation process and once it says success, run the bootstrap using Launchpad for macOS or Search Menu for Windows.
+3. Complete the tutorial about how to use the bootstrap.
+4. Done! You have installed Efaz's Roblox Bootstrap!
 
 ## Credits
 1. Made by <span style="color:#FF8700">@EfazDev</span>
 2. Old Death Sound and Cursors were sourced from <span style="color:#FF5FFF">[Bloxstrap files](https://github.com/pizzaboxer/bloxstrap)</span>
 3. AvatarEditorMaps were from <span style="color:#FF00FF">[Mielesgames's Map Files](https://github.com/Mielesgames/RobloxAvatarEditorMaps)</span> slightly edited to be usable for the current version of Roblox (as of the time of writing this)
-4. Some files were exported from the main macOS Roblox.app or Bloxstrap files. <span style="color:#FF8700">(Logo was made by the Apple Pages app icon, recolored and then added the Roblox Logo)</span>
+4. Some files were exported from the main macOS Roblox.app or Bloxstrap files. <span style="color:#FF8700">(Logo was from the Apple Pages icon, recolored and then added the Roblox Logo)</span>
 5. macOS App was built using <span style="color:#00AFFF">pyinstaller</span>. You can recreate and deploy using this command: `pyinstaller ./Apps/Scripts/Pyinstaller/EfazRobloxBootstrap.spec --distpath Apps --noconfirm && zip -r -y ./Apps/EfazRobloxBootstrapMac.zip "./Apps/EfazRobloxBootstrap.app" "./Apps/PlayRoblox" "./Apps/EfazRobloxBootstrapLoad.app" && rm -rf ./build/ ./Apps/EfazRobloxBootstrapLoad/ && python3 Install.py --install --disable-remove`
 > [!WARNING]
 > This command can only be used using native macOS so a virtual machine may be needed and can reduce security.
