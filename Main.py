@@ -27,7 +27,7 @@ if __name__ == "__main__":
     handler = RobloxFastFlagsInstaller.Main()
     fast_config_loaded = True
     multi_instance_enabled = False
-    current_version = {"version": "1.2.1"}
+    current_version = {"version": "1.2.2"}
     given_args = list(filter(None, sys.argv))
     pip_class = pip()
 
@@ -342,7 +342,7 @@ if __name__ == "__main__":
                                     mai = handler.robloxInstanceInfoNames.get(i)
                                     if "Allow detecting every Roblox event" in mai or "Edit the main bootstrap executable" in mai:
                                         printErrorMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
-                                    elif "Allow detecting when Roblox HttpResponses are ran" in mai or "Allow detecting when Unknown Roblox Handlers are detected" in mai or "Edit or view your bootstrap configuration file" in mai or "Configure your mod modes" in mai or "Edit ModScript.py executable" in mai:
+                                    elif "Allow detecting when Roblox HttpResponses are ran" in mai or "Allow detecting when Unknown Roblox Handlers are detected" in mai or "Edit or view your bootstrap configuration file" in mai or "Configure your mod modes" in mai or "Configure your Roblox client's branding" in mai or "Configure your death sounds" in mai or "Configure your cursors" in mai or "Configure your avatar maps" in mai or "Edit ModScript.py executable" in mai:
                                         printWarnMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
                                     elif "Allow getting Job ID, Place ID and Roblox IP" in mai or "Allow detecting when loading " in mai or "Configure or send macOS Notifications through Bootstrap" in mai:
                                         printYellowMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")

@@ -2,7 +2,7 @@ from PyInstaller.utils.hooks import collect_data_files
 import os
 
 icon_file = "AppIcon.icns"
-current_version = {"version": "1.2.1"}
+current_version = {"version": "1.2.2"}
 
 main_plist = {
     "CFBundleExecutable": "EfazRobloxBootstrap",

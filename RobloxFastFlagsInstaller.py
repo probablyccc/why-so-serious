@@ -175,7 +175,11 @@ class Main():
         "editMainExecutable": "Edit the main bootstrap executable",
         "editModScript": "Edit ModScript.py executable",
         "notifications": "Configure or send macOS Notifications through Bootstrap",
-        "configureModModes": "Configure your mod modes"
+        "configureModModes": "Configure your mod modes",
+        "configureRobloxBranding": "Configure your Roblox client's branding",
+        "configureDeathSounds": "Configure your death sounds",
+        "configureCursors": "Configure your cursors",
+        "configureAvatarMaps": "Configure your avatar maps"
     }
     # System Functions 
     class RobloxInstance():
