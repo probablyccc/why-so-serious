@@ -437,12 +437,12 @@ if __name__ == "__main__":
 
                     # Remove Apps Folder in /Contents/Resources/
                     printMainMessage("Removing Apps Folder in /Contents/Resources/ to save space.")
-                    if os.path.exists(os.path.join(stored_main_app[found_platform][0], "Contents", "Resources", "Apps")):
-                        shutil.rmtree(os.path.join(stored_main_app[found_platform][0], "Contents", "Resources", "Apps"))
-                    if os.path.exists(os.path.join(stored_main_app[found_platform][1], "Contents", "Resources", "Apps")):
-                        shutil.rmtree(os.path.join(stored_main_app[found_platform][1], "Contents", "Resources", "Apps"))
-                    if os.path.exists(os.path.join(stored_main_app[found_platform][2], "Contents", "Resources", "Apps")):
-                        shutil.rmtree(os.path.join(stored_main_app[found_platform][2], "Contents", "Resources", "Apps"))
+                    if os.path.exists(os.path.join(stored_main_app[found_platform][0], "Apps")):
+                        shutil.rmtree(os.path.join(stored_main_app[found_platform][0], "Apps"))
+                    if os.path.exists(os.path.join(stored_main_app[found_platform][1], "Apps")):
+                        shutil.rmtree(os.path.join(stored_main_app[found_platform][1], "Apps"))
+                    if os.path.exists(os.path.join(stored_main_app[found_platform][2], "Apps")):
+                        shutil.rmtree(os.path.join(stored_main_app[found_platform][2], "Apps"))
 
                     # Mark Installation in Windows
                     printMainMessage("Marking Program Installation into Windows..")
