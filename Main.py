@@ -1624,13 +1624,12 @@ if __name__ == "__main__":
         global fflag_configuration
         if handler.getIfRobloxIsOpen():
             if main_os == "Windows":
-                if not (multi_instance_enabled == True or len(given_args) > 1):
+                if multi_instance_enabled == True or len(given_args) > 1:
                     printYellowMessage("Roblox is currently open which prevents file changing by Windows or the hard drive's file system.")
                     return
                 else:
-                    if os.path.exists(os.path.join(f"{os.getenv('LOCALAPPDATA')}", "EfazRobloxBootstrap", "EfazRobloxBootstrap.exe")):
-                        handler.endRoblox()
-                        time.sleep(2)
+                    handler.endRoblox()
+                    time.sleep(2)
 
         if fflag_configuration.get("EFlagRemoveBuilderFont") == True or (fflag_configuration.get("EFlagEnableNewFontNameMappingABTest2") and fflag_configuration.get("EFlagEnableNewFontNameMappingABTest2").lower() == "false"):
             printMainMessage("Changing Font Files..")
