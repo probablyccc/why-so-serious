@@ -19,7 +19,7 @@ def printDebugMessage(mes):
     print(f"\033[38;5;226m{mes}\033[0m")
 
 if __name__ == "__main__":
-    current_version = {"version": "1.2.2"}
+    current_version = {"version": "1.2.3"}
     main_os = platform.system()
     direct_run = False
     args = sys.argv
@@ -39,7 +39,7 @@ if __name__ == "__main__":
                     f.write(args[1])
                 printMainMessage(f"Created URL Exchange File: {url_scheme_path}")
             printMainMessage("Loading EfazRobloxBootstrap executable!")
-            os.system("open -n -a /Applications/EfazRobloxBootstrap.app/Contents/MacOS/EfazRobloxBootstrap")
+            os.system("open -n -a /Applications/EfazRobloxBootstrap.app")
             printSuccessMessage(f"Bootstrap Loader Run Success: 0")
             sys.exit(0)
         else:

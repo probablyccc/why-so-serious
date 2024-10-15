@@ -27,7 +27,7 @@ if __name__ == "__main__":
     handler = RobloxFastFlagsInstaller.Main()
     fast_config_loaded = True
     multi_instance_enabled = False
-    current_version = {"version": "1.2.2"}
+    current_version = {"version": "1.2.3"}
     given_args = list(filter(None, sys.argv))
     pip_class = pip()
 
@@ -97,6 +97,56 @@ if __name__ == "__main__":
                 app_icon = "AppIcon.ico",
                 timeout = 30,
             )
+    def generateModsManifest():
+        generated_manifest = {}
+        for i in os.listdir("./Mods/"):
+            mod_info = {
+                "name": i,
+                "id": i,
+                "version": "1.0.0",
+                "mod_script": False,
+                "mod_script_path": "",
+                "manifest_path": "",
+                "enabled": False,
+                "permissions": []
+            }
+            mod_path = os.path.join("./Mods/", i)
+            if os.path.isdir(mod_path):
+                manifest_path = os.path.join(mod_path, "Manifest.json")
+                mod_script_path = os.path.join(mod_path, "ModScript.py")
+                if not (fflag_configuration.get("EFlagEnabledMods") and type(fflag_configuration["EFlagEnabledMods"]) is dict):
+                    fflag_configuration["EFlagEnabledMods"] = {}
+                if fflag_configuration["EFlagEnabledMods"].get(i) == True:
+                    mod_info["enabled"] = True
+                if os.path.exists(manifest_path) and os.path.isfile(manifest_path):
+                    res_json = readJSONFile(manifest_path)
+                    if res_json:
+                        if type(res_json.get("name")) is str:
+                            mod_info["name"] = res_json.get("name")
+                        if type(res_json.get("version")) is str and len(res_json.get("version")) < 10:
+                            mod_info["version"] = res_json.get("version")
+                        if type(res_json.get("mod_script")) is bool:
+                            mod_info["mod_script"] = res_json.get("mod_script")
+                        if type(res_json.get("mod_script_requirements")) is list:
+                            mod_info["permissions"] = res_json.get("mod_script_requirements")
+                        mod_info["manifest_path"] = manifest_path
+                if os.path.exists(mod_script_path) and os.path.isfile(mod_script_path):
+                    with open(mod_script_path, "r") as f:
+                        mod_mode_script_text = f.read()
+                    if "FastFlagConfiguration.json" in mod_mode_script_text and not ("fastFlagConfiguration" in mod_info["permissions"]): mod_info["permissions"].append("fastFlagConfiguration")
+                    if "Main.py" in mod_mode_script_text and not ("editMainExecutable" in mod_info["permissions"]): mod_info["permissions"].append("editMainExecutable")
+                    if "ModScript.py" in mod_mode_script_text and not ("editModScript" in mod_info["permissions"]): mod_info["permissions"].append("editModScript")
+                    if "MacOSNotification" in mod_mode_script_text and not ("macNotification" in mod_info["permissions"]): mod_info["permissions"].append("macNotification")
+                    if "Mods" in mod_mode_script_text and not ("configureMods" in mod_info["permissions"]): mod_info["permissions"].append("configureMods")
+                    if "RobloxBrand" in mod_mode_script_text and not ("configureRobloxBranding" in mod_info["permissions"]): mod_info["permissions"].append("configureRobloxBranding")
+                    if "DeathSounds" in mod_mode_script_text and not ("configureDeathSounds" in mod_info["permissions"]): mod_info["permissions"].append("configureDeathSounds")
+                    if "Cursors" in mod_mode_script_text and not ("configureCursors" in mod_info["permissions"]): mod_info["permissions"].append("configureCursors")
+                    if "AvatarEditorMaps" in mod_mode_script_text and not ("configureAvatarMaps" in mod_info["permissions"]): mod_info["permissions"].append("configureAvatarMaps")
+                    mod_info["mod_script_path"] = mod_script_path
+                else:
+                    mod_info["mod_script"] = False
+                generated_manifest[i] = mod_info
+        return generated_manifest
     
     os.system("cls" if os.name == "nt" else "clear")
     printWarnMessage("-----------")
@@ -228,155 +278,6 @@ if __name__ == "__main__":
         elif isNo(a) == True:
             fflag_configuration["EFlagRemoveBuilderFont"] = False
             printDebugMessage("User selected: False")
-
-        printMainMessage("Would you like to use a Mod Mode? (y/n)")
-        b = input("> ")
-        if isYes(b) == True:
-            mode_jsons = {}
-            fflag_configuration["EFlagEnableModModes"] = True
-            def scan_name(a):
-                if main_os == "Windows":
-                    if os.path.exists(f"{os.path.curdir}\\ModModes\\{a}\\") and os.path.exists(f"{os.path.curdir}\\ModModes\\{a}\\Manifest.json"):
-                        return True
-                    else:
-                        return False
-                elif main_os == "Darwin":
-                    if os.path.exists(f"{os.path.curdir}/ModModes/{a}/") and os.path.exists(f"{os.path.curdir}/ModModes/{a}/Manifest.json"):
-                        return True
-                    else:
-                        return False
-            def getName():
-                unfiltered_got_mode = []
-                got_mode = []
-                for i in os.listdir("./ModModes/"):
-                    if os.path.isdir(f"./ModModes/{i}/") and os.path.exists(f"./ModModes/{i}/Manifest.json"):
-                        unfiltered_got_mode.append(i)
-                printWarnMessage("Select the number that is associated with the mod you want to use.")
-                unfiltered_got_mode = sorted(unfiltered_got_mode)
-                count = 1
-                for i in unfiltered_got_mode:
-                    res_json = readJSONFile(f"./ModModes/{i}/Manifest.json")
-                    if res_json:
-                        final_vers = "1.0.0"
-                        if res_json.get("version"):
-                            if type(res_json.get("version")) is str and len(res_json.get("version")) < 10:
-                                final_vers = res_json.get("version")
-                        got_mode.append(i)
-                        mode_jsons[i] = res_json
-                        if res_json.get("name") == i:
-                            printMainMessage(f"[{str(count)}] = {i} [v{final_vers}]")
-                        elif type(res_json.get("name")) is str:
-                            printMainMessage(f"[{str(count)}] = {res_json.get('name')} [v{final_vers}] [{i}]")
-                        else:
-                            printMainMessage(f"[{str(count)}] = {i} [v{final_vers}]")
-                    count += 1
-                if main_os == "Darwin":
-                    printYellowMessage("[Also, if you just added a new mod folder into the ModModes folder, please rerun Install.py in order for it to seen.]")
-                a = input("> ")
-                if a.isnumeric():
-                    c = int(a)-1
-                    if c < len(got_mode) and c >= 0:
-                        if got_mode[c]:
-                            b = got_mode[c]
-                            if scan_name(b) == True:
-                                return b
-                            else:
-                                printDebugMessage("Directory is not valid.")
-                                return "Original"
-                        else:
-                            printDebugMessage("User gave a number which is somehow not on the list..?")
-                            return "Original"
-                    else:
-                        printDebugMessage("User gave a number which is out of reach.")
-                        return "Original"
-                else:
-                    printDebugMessage("User gave a response which is not a number.")
-                    return "Original"
-            set_mod_mode = getName()
-            if not (fflag_configuration.get("EFlagSelectedModMode") == None or fflag_configuration.get("EFlagSelectedModMode") == "Original") and set_mod_mode == "Original":
-                fflag_configuration["EFlagModModeAllowedDetectments"] = []
-                fflag_configuration["EFlagEnableModModeScripts"] = False
-                printMainMessage("It seems like you have defaulted the current mod mode to Original! Would you like to reinstall Roblox to clear previous mods?")
-                a = input("> ")
-                if isYes(a) == True:
-                    handler.installRoblox()
-            elif os.path.exists(os.path.join(os.path.curdir, "ModModes", set_mod_mode, "Manifest.json")):
-                res_json = readJSONFile(f"./ModModes/{set_mod_mode}/Manifest.json")
-                if res_json:
-                    if (not (fflag_configuration.get("EFlagAllowActivityTracking") == True) or (fflag_configuration.get("EFlagAllowActivityTracking") == None)) and (res_json.get("mod_script") == True):
-                        printMainMessage("Would you like to allow Activity Tracking on the Roblox client? (y/n)")
-                        printMainMessage("This will allow features like:")
-                        printMainMessage("- Server Locations")
-                        printMainMessage("- Discord Webhook")
-                        printMainMessage("- BloxstrapRPC")
-                        printMainMessage("- Discord Presence")
-                        printMainMessage("- Mod Mode Scripts")
-                        d = input("> ")
-                        if isYes(d) == True:
-                            fflag_configuration["EFlagAllowActivityTracking"] = True
-                            printDebugMessage("User selected: True")
-                        elif isNo(d) == True:
-                            fflag_configuration["EFlagAllowActivityTracking"] = False
-                            printDebugMessage("User selected: False")
-                    if res_json.get("mod_script") == True and os.path.exists(os.path.join(os.path.curdir, "ModModes", set_mod_mode, "ModScript.py")) and fflag_configuration.get("EFlagAllowActivityTracking") == True:
-                        printMainMessage("It seems like this mod mode contains a script enabled. Would you like to enable it with Activity Tracking? (y/n)")
-                        if type(res_json.get("mod_script_requirements")) is list:
-                            printMainMessage("You will enable the following for this item: ")
-                            with open(os.path.join(os.path.curdir, "ModModes", set_mod_mode, "ModScript.py"), "r") as f:
-                                mod_mode_script_text = f.read()
-                            if not (res_json.get("mod_script_requirements")):
-                                res_json["mod_script_requirements"] = []
-
-                            if "FastFlagConfiguration.json" in mod_mode_script_text and not ("fastFlagConfiguration" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("fastFlagConfiguration")
-                            if "Main.py" in mod_mode_script_text and not ("editMainExecutable" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("editMainExecutable")
-                            if "ModScript.py" in mod_mode_script_text and not ("editModScript" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("editModScript")
-                            if "MacOSNotification" in mod_mode_script_text and not ("macNotification" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("macNotification")
-                            if "ModModes" in mod_mode_script_text and not ("configureModModes" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureModModes")
-                            if "RobloxBrand" in mod_mode_script_text and not ("configureRobloxBranding" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureRobloxBranding")
-                            if "DeathSounds" in mod_mode_script_text and not ("configureDeathSounds" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureDeathSounds")
-                            if "Cursors" in mod_mode_script_text and not ("configureCursors" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureCursors")
-                            if "AvatarEditorMaps" in mod_mode_script_text and not ("configureAvatarMaps" in res_json["mod_script_requirements"]): res_json["mod_script_requirements"].append("configureAvatarMaps")
-
-                            for i in res_json.get("mod_script_requirements", []):
-                                if type(i) is str and handler.robloxInstanceInfoNames.get(i):
-                                    mai = handler.robloxInstanceInfoNames.get(i)
-                                    if "Allow detecting every Roblox event" in mai or "Edit the main bootstrap executable" in mai:
-                                        printErrorMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
-                                    elif "Allow detecting when Roblox HttpResponses are ran" in mai or "Allow detecting when Unknown Roblox Handlers are detected" in mai or "Edit or view your bootstrap configuration file" in mai or "Configure your mod modes" in mai or "Configure your Roblox client's branding" in mai or "Configure your death sounds" in mai or "Configure your cursors" in mai or "Configure your avatar maps" in mai or "Edit ModScript.py executable" in mai:
-                                        printWarnMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
-                                    elif "Allow getting Job ID, Place ID and Roblox IP" in mai or "Allow detecting when loading " in mai or "Configure or send macOS Notifications through Bootstrap" in mai:
-                                        printYellowMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
-                                    else:
-                                        printMainMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
-                                else:
-                                    printErrorMessage(f"- Unknown Requirement")
-                        printWarnMessage("PLEASE CHECK THE SCRIPT BEFORE ENABLING! DON'T ENABLE IF YOU DON'T KNOW WHAT YOU'RE DOING!!")
-                        printWarnMessage("AFTER ENABLING, WE WON'T BE RESPONSIBLE FOR ANY DAMAGES CAUSED BY IT, EVEN IF YOUR ACCOUNT AND COMPUTER ARE COMPROMISED.")
-                        a = input("> ")
-                        if isYes(a) == True:
-                            if type(res_json.get("mod_script_requirements")) is list:
-                                fflag_configuration["EFlagModModeAllowedDetectments"] = res_json.get("mod_script_requirements")
-                            else:
-                                fflag_configuration["EFlagModModeAllowedDetectments"] = []
-                            fflag_configuration["EFlagEnableModModeScripts"] = True
-                        else:
-                            fflag_configuration["EFlagModModeAllowedDetectments"] = []
-                            fflag_configuration["EFlagEnableModModeScripts"] = False
-                    else:
-                        fflag_configuration["EFlagModModeAllowedDetectments"] = []
-                        fflag_configuration["EFlagEnableModModeScripts"] = False
-                else:
-                    fflag_configuration["EFlagModModeAllowedDetectments"] = []
-                    fflag_configuration["EFlagEnableModModeScripts"] = False
-            else:
-                fflag_configuration["EFlagModModeAllowedDetectments"] = []
-                fflag_configuration["EFlagEnableModModeScripts"] = False
-            fflag_configuration["EFlagSelectedModMode"] = set_mod_mode
-            printSuccessMessage(f"Set mod mode: {set_mod_mode}")
-        elif isNo(b) == True:
-            fflag_configuration["EFlagEnableModModes"] = False
-            printDebugMessage("User selected: False")
-
 
         printMainMessage("Would you like to change the background of the Avatar Editor? (y/n)")
         c = input("> ")
@@ -616,9 +517,9 @@ if __name__ == "__main__":
         printMainMessage("Would you like to allow Activity Tracking on the Roblox client? (y/n)")
         printMainMessage("This will allow features like:")
         printMainMessage("- Server Locations")
-        printMainMessage("- Discord Webhook")
         printMainMessage("- BloxstrapRPC")
         printMainMessage("- Discord Presence")
+        printMainMessage("- Discord Webhooks")
         printMainMessage("- Mod Mode Scripts")
         if main_os == "Windows":
             printMainMessage("- Multiple Instances")
@@ -700,59 +601,68 @@ if __name__ == "__main__":
                 if d.startswith("https://discord.com/api/webhooks/"):
                     printDebugMessage("URL passed test.")
                     fflag_configuration["EFlagDiscordWebhookURL"] = d
+                if fflag_configuration.get("EFlagDiscordWebhookURL", "").startswith("https://discord.com/api/webhooks/"):
                     printMainMessage("Enter your Discord User ID (you may need Developer Mode in order to copy):")
                     d = input("> ")
                     if d.isnumeric():
                         fflag_configuration["EFlagDiscordWebhookUserId"] = d
-                        printMainMessage("When should this Discord Webhook be notified?")
-                        printMainMessage("[1/6] It should be notified when the client connects to a Roblox server. (y/n)")
-                        d = input("> ")
-                        if isYes(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookConnect"] = True
-                            printDebugMessage("User selected: True")
-                        elif isNo(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookConnect"] = False
-                            printDebugMessage("User selected: False")
-                        printMainMessage("[2/6] It should be notified when the client disconnects from a server. (y/n)")
-                        d = input("> ")
-                        if isYes(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookDisconnect"] = True
-                            printDebugMessage("User selected: True")
-                        elif isNo(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookDisconnect"] = False
-                            printDebugMessage("User selected: False")
-                        printMainMessage("[3/6] It should be notified when Roblox opens. (y/n)")
-                        d = input("> ")
-                        if isYes(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookRobloxAppStart"] = True
-                            printDebugMessage("User selected: True")
-                        elif isNo(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookRobloxAppStart"] = False
-                            printDebugMessage("User selected: False")
-                        printMainMessage("[4/6] It should be notified when Roblox closes. (y/n)")
-                        d = input("> ")
-                        if isYes(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookRobloxAppClose"] = True
-                            printDebugMessage("User selected: True")
-                        elif isNo(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookRobloxAppClose"] = False
-                            printDebugMessage("User selected: False")
-                        printMainMessage("[5/6] It should be notified when Roblox crashes. (y/n)")
-                        d = input("> ")
-                        if isYes(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookRobloxCrash"] = True
-                            printDebugMessage("User selected: True")
-                        elif isNo(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookRobloxCrash"] = False
-                            printDebugMessage("User selected: False")
-                        printMainMessage("[6/6] It should be notified when Bloxstrap RPC is triggered. (y/n)")
-                        d = input("> ")
-                        if isYes(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookBloxstrapRPC"] = True
-                            printDebugMessage("User selected: True")
-                        elif isNo(d) == True:
-                            fflag_configuration["EFlagDiscordWebhookBloxstrapRPC"] = False
-                            printDebugMessage("User selected: False")
+                    printMainMessage("When should this Discord Webhook be notified?")
+                    printMainMessage("[1/6] It should be notified when the client connects to a Roblox server. (y/n)")
+                    d = input("> ")
+                    if isYes(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookConnect"] = True
+                        printDebugMessage("User selected: True")
+                    elif isNo(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookConnect"] = False
+                        printDebugMessage("User selected: False")
+                    printMainMessage("[2/6] It should be notified when the client disconnects from a server. (y/n)")
+                    d = input("> ")
+                    if isYes(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookDisconnect"] = True
+                        printDebugMessage("User selected: True")
+                    elif isNo(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookDisconnect"] = False
+                        printDebugMessage("User selected: False")
+                    printMainMessage("[3/6] It should be notified when Roblox opens. [Process ID and Log File Location (includes username in computer) is revealed in message] (y/n)")
+                    d = input("> ")
+                    if isYes(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookRobloxAppStart"] = True
+                        printDebugMessage("User selected: True")
+                    elif isNo(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookRobloxAppStart"] = False
+                        printDebugMessage("User selected: False")
+                    printMainMessage("[4/6] It should be notified when Roblox closes. [Process ID and Log File Location (includes username in computer) is revealed in message] (y/n)")
+                    d = input("> ")
+                    if isYes(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookRobloxAppClose"] = True
+                        printDebugMessage("User selected: True")
+                    elif isNo(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookRobloxAppClose"] = False
+                        printDebugMessage("User selected: False")
+                    printMainMessage("[5/6] It should be notified when Roblox crashes. [Console Log is revealed] (y/n)")
+                    d = input("> ")
+                    if isYes(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookRobloxCrash"] = True
+                        printDebugMessage("User selected: True")
+                    elif isNo(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookRobloxCrash"] = False
+                        printDebugMessage("User selected: False")
+                    printMainMessage("[6/6] It should be notified when Bloxstrap RPC is triggered. (y/n)")
+                    d = input("> ")
+                    if isYes(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookBloxstrapRPC"] = True
+                        printDebugMessage("User selected: True")
+                    elif isNo(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookBloxstrapRPC"] = False
+                        printDebugMessage("User selected: False")
+                    printMainMessage("Would you like it to show the pid number in the webhook footer? (y/n)")
+                    d = input("> ")
+                    if isYes(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookShowPidInFooter"] = True
+                        printDebugMessage("User selected: True")
+                    elif isNo(d) == True:
+                        fflag_configuration["EFlagDiscordWebhookShowPidInFooter"] = False
+                        printDebugMessage("User selected: False")
                 else:
                     fflag_configuration["EFlagUseDiscordWebhook"] = False
                     printErrorMessage("The provided webhook link is not a valid format.")
@@ -897,9 +807,11 @@ if __name__ == "__main__":
     def handleOption9(): # Reinstall Roblox
         printWarnMessage("--- Reinstall Roblox ---")
         printMainMessage("Are you sure you want to reinstall Roblox?")
+        if main_os == "Windows":
+            printYellowMessage("WARNING! This will force-quit any open Roblox windows!")
         a = input("> ")
         if isYes(a) == True:
-            handler.installRoblox()
+            handler.installRoblox(forceQuit=main_os == "Windows")
     def handleOption10(url_scheme=None): # Roblox Link Shortcuts
         printWarnMessage("--- Roblox Link Shortcuts ---")
         if type(url_scheme) is str:
@@ -938,6 +850,7 @@ if __name__ == "__main__":
                         generated_ui_options.append({"index": 1, "message": f"{v.get('name')} [{i}]", "shortcut_info": v})
             generated_ui_options.append({"index": 999999, "message": "Create a new shortcut"})
             generated_ui_options.append({"index": 1000000, "message": "Delete a shortcut"})
+            generated_ui_options = sorted(generated_ui_options, key=lambda x: x["index"])
             count = 1
             for i in generated_ui_options:
                 printMainMessage(f"[{str(count)}] = {i['message']}")
@@ -1046,6 +959,230 @@ if __name__ == "__main__":
                         sys.exit(0)
             else:
                 sys.exit(0)
+    def handleOption11(): # Mods Manager
+        global fflag_configuration
+        def saveSettings():
+            if (fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir") and os.path.exists(fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir"))):
+                if main_os == "Windows":
+                    if os.path.exists(f'{fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir")}\\FastFlagConfiguration.json'):
+                        with open(f'{fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir")}\\FastFlagConfiguration.json', "w") as f:
+                            json.dump(fflag_configuration, f, indent=4)
+                    else:
+                        printErrorMessage("Bootstrap Sync is not supported since the original unextracted directory is not found.")
+                elif main_os == "Darwin":
+                    if os.path.exists(f'{fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir")}/FastFlagConfiguration.json'):
+                        with open(f'{fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir")}/FastFlagConfiguration.json', "w") as f:
+                            json.dump(fflag_configuration, f, indent=4)
+                    else:
+                        printErrorMessage("Bootstrap Sync is not supported since the original unextracted directory is not found.")
+            with open("FastFlagConfiguration.json", "w") as f:
+                json.dump(fflag_configuration, f, indent=4)
+        if fflag_configuration.get("EFlagEnableModModes") == True:
+            def mainModManager():
+                printWarnMessage("--- Mods Manager ---")
+                printSuccessMessage(f"Mods Enabled: Yes")
+                if (not (fflag_configuration.get("EFlagAllowActivityTracking") == True) or (fflag_configuration.get("EFlagAllowActivityTracking") == None)):
+                    printMainMessage("Would you like to allow Activity Tracking on the Roblox client? (y/n)")
+                    printMainMessage("This will allow features like:")
+                    printMainMessage("- Server Locations")
+                    printMainMessage("- BloxstrapRPC")
+                    printMainMessage("- Discord Presence")
+                    printMainMessage("- Discord Webhooks")
+                    printMainMessage("- Mod Mode Scripts")
+                    d = input("> ")
+                    if isYes(d) == True:
+                        fflag_configuration["EFlagAllowActivityTracking"] = True
+                        saveSettings()
+                        printDebugMessage("User selected: True")
+                    elif isNo(d) == True:
+                        fflag_configuration["EFlagAllowActivityTracking"] = False
+                        saveSettings()
+                        printDebugMessage("User selected: False")
+                        return
+                if os.path.exists(f"./Mods/{fflag_configuration.get('EFlagSelectedModMode')}/ModScript.py"):
+                    printMainMessage(f"Selected Mod Script: {fflag_configuration.get('EFlagSelectedModMode')}")
+                else:
+                    printMainMessage(f"Selected Mod Script: None")
+                printMainMessage("Select an option or a mod to enable/disable!")
+                generated_ui_options = []
+                main_ui_options = {}
+                mods_manifest = generateModsManifest()
+                for i, v in mods_manifest.items():
+                    final_vers = "1.0.0"
+                    final_name = ""
+                    final_enabled = "❌"
+                    final_mod_enabled = "❌"
+                    if v.get("version"):
+                        final_vers = v.get("version")
+                    if v.get("enabled") == True:
+                        final_enabled = "✅"
+                    else:
+                        final_enabled = "❌"
+                    if v.get("name") == i:
+                        final_name = f"{i}"
+                    elif type(v.get("name")) is str:
+                        final_name = f"{v.get('name')} [{i}]"
+                    else:
+                        final_name = f"{i}"
+                    generated_ui_options.append({"index": 1, "message": f"[{final_enabled}] {final_name} [v{final_vers}]", "final_name": final_name, "mod_info": v, "mod_id": i})
+                generated_ui_options.append({"index": 999998, "message": "Select Mod Script"})
+                if (fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir") and os.path.exists(os.path.join(fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir"), "Mods"))):
+                    generated_ui_options.append({"index": 999999, "message": "Sync Mods from Installation Folder"})
+                generated_ui_options.append({"index": 1000000, "message": "Disable Appling Mods"})
+                generated_ui_options.append({"index": 1000001, "message": "Exit Mods Manager"})
+                generated_ui_options = sorted(generated_ui_options, key=lambda x: x["index"])
+                count = 1
+                for i in generated_ui_options:
+                    printMainMessage(f"[{str(count)}] = {i['message']}")
+                    main_ui_options[str(count)] = i
+                    count += 1
+                res = input("> ")
+                if main_ui_options.get(res):
+                    opt = main_ui_options[res]
+                    if opt["index"] == 999998:
+                        printMainMessage("Select a mod mode script to be used!")
+                        mod_mode_script_generated_ui_options = []
+                        mod_mode_script_ui_options = {}
+                        for i, v in mods_manifest.items():
+                            if v["mod_script"] == True:
+                                if fflag_configuration.get('EFlagSelectedModMode') == i:
+                                    final_mod_enabled = "✅"
+                                else:
+                                    final_mod_enabled = "❌"
+                                if v.get("name") == i:
+                                    final_name = f"{i}"
+                                elif type(v.get("name")) is str:
+                                    final_name = f"{v.get('name')} [{i}]"
+                                else:
+                                    final_name = f"{i}"
+                                mod_mode_script_generated_ui_options.append({"index": 1, "message": f"[{final_mod_enabled}] {final_name} [v{final_vers}]", "final_name": final_name, "mod_info": v, "mod_id": i})
+                        mod_mode_script_generated_ui_options.append({"index": 9999, "message": f"Disable Mod Mode Scripts"})
+                        mod_mode_script_generated_ui_options = sorted(mod_mode_script_generated_ui_options, key=lambda x: x["index"])
+                        mod_count = 1
+                        if len(mod_mode_script_generated_ui_options) < 1:
+                            printErrorMessage("No Mod Mode Scripts available. Please sync mods with a mod script in order for it to show here!")
+                        else:
+                            for i in mod_mode_script_generated_ui_options:
+                                printMainMessage(f"[{str(mod_count)}] = {i['message']}")
+                                mod_mode_script_ui_options[str(mod_count)] = i
+                                mod_count += 1
+                            res = input("> ")
+                            if mod_mode_script_ui_options.get(res):
+                                sel_mod_script = mod_mode_script_ui_options[res]
+                                if sel_mod_script["index"] == 9999:
+                                    fflag_configuration["EFlagSelectedModMode"] = None
+                                    fflag_configuration["EFlagModModeAllowedDetectments"] = []
+                                    fflag_configuration["EFlagEnableModModeScripts"] = False
+                                    printSuccessMessage(f'Successfully changed current mod script to "{final_name}"!')
+                                else:
+                                    set_mod_mode = sel_mod_script["mod_id"]
+                                    if sel_mod_script["mod_info"].get("mod_script") == True and os.path.exists(os.path.join(os.path.curdir, "Mods", set_mod_mode, "ModScript.py")) and fflag_configuration.get("EFlagAllowActivityTracking") == True:
+                                        printMainMessage("You will enable the following for this item: ")
+                                        with open(os.path.join(os.path.curdir, "Mods", set_mod_mode, "ModScript.py"), "r") as f:
+                                            mod_mode_script_text = f.read()
+                                        if not (sel_mod_script["mod_info"].get("permissions")):
+                                            sel_mod_script["mod_info"]["permissions"] = []
+
+                                        if "FastFlagConfiguration.json" in mod_mode_script_text and not ("fastFlagConfiguration" in sel_mod_script["mod_info"]["permissions"]): sel_mod_script["mod_info"]["permissions"].append("fastFlagConfiguration")
+                                        if "Main.py" in mod_mode_script_text and not ("editMainExecutable" in sel_mod_script["mod_info"]["permissions"]): sel_mod_script["mod_info"]["permissions"].append("editMainExecutable")
+                                        if "ModScript.py" in mod_mode_script_text and not ("editModScript" in sel_mod_script["mod_info"]["permissions"]): sel_mod_script["mod_info"]["permissions"].append("editModScript")
+                                        if "MacOSNotification" in mod_mode_script_text and not ("macNotification" in sel_mod_script["mod_info"]["permissions"]): sel_mod_script["mod_info"]["permissions"].append("macNotification")
+                                        if "Mods" in mod_mode_script_text and not ("configureMods" in sel_mod_script["mod_info"]["permissions"]): sel_mod_script["mod_info"]["permissions"].append("configureMods")
+                                        if "RobloxBrand" in mod_mode_script_text and not ("configureRobloxBranding" in sel_mod_script["mod_info"]["permissions"]): sel_mod_script["mod_info"]["permissions"].append("configureRobloxBranding")
+                                        if "DeathSounds" in mod_mode_script_text and not ("configureDeathSounds" in sel_mod_script["mod_info"]["permissions"]): sel_mod_script["mod_info"]["permissions"].append("configureDeathSounds")
+                                        if "Cursors" in mod_mode_script_text and not ("configureCursors" in sel_mod_script["mod_info"]["permissions"]): sel_mod_script["mod_info"]["permissions"].append("configureCursors")
+                                        if "AvatarEditorMaps" in mod_mode_script_text and not ("configureAvatarMaps" in sel_mod_script["mod_info"]["permissions"]): sel_mod_script["mod_info"]["permissions"].append("configureAvatarMaps")
+
+                                        for i in sel_mod_script["mod_info"].get("permissions", []):
+                                            if type(i) is str and handler.robloxInstanceInfoNames.get(i):
+                                                mai = handler.robloxInstanceInfoNames.get(i)
+                                                if "Allow detecting every Roblox event" in mai or "Edit the main bootstrap executable" in mai:
+                                                    printErrorMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
+                                                elif "Allow detecting when Roblox HttpResponses are ran" in mai or "Allow detecting when Unknown Roblox Handlers are detected" in mai or "Edit or view your bootstrap configuration file" in mai or "Configure your mod modes" in mai or "Configure your Roblox client's branding" in mai or "Configure your death sounds" in mai or "Configure your cursors" in mai or "Configure your avatar maps" in mai or "Edit ModScript.py executable" in mai:
+                                                    printWarnMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
+                                                elif "Allow getting Job ID, Place ID and Roblox IP" in mai or "Allow detecting when loading " in mai or "Configure or send macOS Notifications through Bootstrap" in mai:
+                                                    printYellowMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
+                                                else:
+                                                    printMainMessage(f"- {handler.robloxInstanceInfoNames.get(i)}")
+                                            else:
+                                                printErrorMessage(f"- Unknown Requirement")
+                                        printYellowMessage("Please check the insides of the script before enabling even if someone asked you to install this!!")
+                                        printYellowMessage("We won't be responsible for any damages by it! This includes if your Roblox Account or your computer are compromised!!")
+                                        printYellowMessage("(y/n)")
+                                        a = input("> ")
+                                        if isYes(a) == True:
+                                            if type(sel_mod_script["mod_info"].get("permissions", [])) is list:
+                                                fflag_configuration["EFlagModModeAllowedDetectments"] = sel_mod_script["mod_info"].get("permissions", [])
+                                            else:
+                                                fflag_configuration["EFlagModModeAllowedDetectments"] = []
+                                            fflag_configuration["EFlagSelectedModMode"] = set_mod_mode
+                                            fflag_configuration["EFlagEnableModModeScripts"] = True
+                                            printSuccessMessage(f'Successfully changed current mod script to "{sel_mod_script['final_name']}"!')
+                                        else:
+                                            fflag_configuration["EFlagModModeAllowedDetectments"] = []
+                                            fflag_configuration["EFlagEnableModModeScripts"] = False
+                                    else:
+                                        fflag_configuration["EFlagModModeAllowedDetectments"] = []
+                                        fflag_configuration["EFlagEnableModModeScripts"] = False
+                                saveSettings()
+                    elif opt["index"] == 999999:
+                        printMainMessage("Syncing mods..")
+                        targeted_sync_location = os.path.join(fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir"), "Mods")
+                        if os.path.exists(targeted_sync_location) and os.path.isdir(targeted_sync_location):
+                            for i in os.listdir(targeted_sync_location):
+                                syncing_mod_path = os.path.join(targeted_sync_location, i)
+                                if os.path.isdir(syncing_mod_path):
+                                    shutil.copytree(syncing_mod_path, f"./Mods/{i}/", dirs_exist_ok=True)
+                            printSuccessMessage("Successfully synced all mods from installation folder!")
+                        else:
+                            printErrorMessage("Something went wrong.")
+                    elif opt["index"] == 1000000:
+                        printMainMessage("Disabling mods..")
+                        fflag_configuration["EFlagEnableModModes"] = False
+                        saveSettings()
+                        printSuccessMessage("Successfully disabled Mods! Would you like to reinstall Roblox to clear existing mods or continue with partial setup?")
+                        if main_os == "Windows":
+                            printYellowMessage("WARNING! This will quit any open Roblox windows!")
+                        d = input("> ")
+                        if isYes(d) == True:
+                            if main_os == "Windows":
+                                handler.installRoblox(forceQuit=True)
+                            else:
+                                handler.installRoblox()
+                        elif isNo(d) == True:
+                            saveSettings()
+                            printDebugMessage("User selected: False")
+                            return
+                        printMainMessage("Exiting Mods Manager..")
+                        return
+                    elif opt["index"] == 1000001:
+                        printMainMessage("Exiting Mods Manager..")
+                        return
+                    else:
+                        if not (fflag_configuration.get("EFlagEnabledMods") and type(fflag_configuration["EFlagEnabledMods"]) is dict):
+                            fflag_configuration["EFlagEnabledMods"] = {}
+                        if opt.get("mod_info"):
+                            if opt["mod_info"]["enabled"] == True:
+                                fflag_configuration["EFlagEnabledMods"][opt["mod_id"]] = False
+                                printSuccessMessage(f"Successfully disabled mod {opt.get('final_name')}!")
+                            else:
+                                fflag_configuration["EFlagEnabledMods"][opt["mod_id"]] = True
+                                printSuccessMessage(f"Successfully enabled mod {opt.get('final_name')}!")
+                        saveSettings()
+                    mainModManager()
+                else:
+                    return
+            mainModManager()
+        else:
+            printWarnMessage("--- Mods Manager ---")
+            printErrorMessage("Mods Enabled: No")
+            printMainMessage("Would you like to enable Mods? (y/n)")
+            b = input("> ")
+            if isYes(b) == True:
+                fflag_configuration["EFlagEnableModModes"] = True
+                saveSettings()
+                handleOption11()
+
     def handleOptionSelect(mes="Option finished! Would you like to continue to Roblox? (y/n)"): # Handle Continue to Roblox
         printWarnMessage(mes)
         a = input("> ")
@@ -1142,6 +1279,7 @@ if __name__ == "__main__":
                 generated_ui_options.append({"index": 4, "message": "Do weight-lifting", "func": handleOption1})
                 generated_ui_options.append({"index": 5, "message": "Do neither", "func": handleOption1})
                 generated_ui_options.append({"index": 6, "message": "Do all of the above", "func": handleOption1})
+                generated_ui_options = sorted(generated_ui_options, key=lambda x: x["index"])
                 printWarnMessage("--- Select Option ---")
                 count = 1
                 for i in generated_ui_options:
@@ -1202,17 +1340,18 @@ if __name__ == "__main__":
                 main_ui_options = {}
                 generated_ui_options.append({"index": 1, "message": "Continue to Roblox", "func": handleOption1, "include_go_to_roblox": False})
                 generated_ui_options.append({"index": 3, "message": "Run Fast Flag Installer", "func": handleOption3, "include_go_to_roblox": True, "include_message": "Installer has finished! Would you like to go to Roblox? (y/n)"})
-                generated_ui_options.append({"index": 4, "message": "Set Settings", "func": handleOption4, "include_go_to_roblox": True, "include_message": "Settings has been saved! Would you like to go to Roblox? (y/n)"})
-                generated_ui_options.append({"index": 5, "message": "Roblox Link Shortcuts", "func": handleOption10, "include_go_to_roblox": False, "include_message": "Roblox Start Shortcut is set! Would you like to run it now? (y/n)"})
-                generated_ui_options.append({"index": 6, "message": "End All Roblox Instances", "func": handleOption8, "include_go_to_roblox": True, "include_message": "Roblox Instances have been ended! Would you like to rerun it? (y/n)"})
-                generated_ui_options.append({"index": 7, "message": "Reinstall Roblox", "func": handleOption9, "include_go_to_roblox": True, "include_message": "Roblox has been reinstalled! Would you like to run it now? (y/n)"})
+                generated_ui_options.append({"index": 4, "message": "Open Mods Manager", "func": handleOption11, "include_go_to_roblox": True, "include_message": "Mod Settings has been saved! Would you like to go to Roblox? (y/n)"})
+                generated_ui_options.append({"index": 5, "message": "Set Settings", "func": handleOption4, "include_go_to_roblox": True, "include_message": "Settings has been saved! Would you like to go to Roblox? (y/n)"})
+                generated_ui_options.append({"index": 6, "message": "Roblox Link Shortcuts", "func": handleOption10, "include_go_to_roblox": False, "include_message": "Roblox Start Shortcut is set! Would you like to run it now? (y/n)"})
+                generated_ui_options.append({"index": 7, "message": "End All Roblox Instances", "func": handleOption8, "include_go_to_roblox": True, "include_message": "Roblox Instances have been ended! Would you like to rerun it? (y/n)"})
+                generated_ui_options.append({"index": 8, "message": "Reinstall Roblox", "func": handleOption9, "include_go_to_roblox": True, "include_message": "Roblox has been reinstalled! Would you like to run it now? (y/n)"})
                 generated_ui_options.append({"index": 99, "message": "Credits", "func": handleOption7, "include_go_to_roblox": True, "include_message": "Would you like to go to Roblox? (y/n)"})
                 if main_os == "Darwin" or main_os == "Windows":
                     if (fflag_configuration.get("EFlagEnableDuplicationOfClients") == True):
                         generated_ui_options.append({"index": 2, "message": "Generate Another Roblox Instance", "func": handleOption2, "include_go_to_roblox": False})
                 if (fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir") and os.path.exists(fflag_configuration.get("EFlagEfazRobloxBootStrapSyncDir"))):
-                    generated_ui_options.append({"index": 10, "message": "Sync to Fast Flag Configuration", "func": handleOption5, "include_go_to_roblox": True, "include_message": "Sync finished! Would you like to run Roblox now? (y/n)"})
-                    generated_ui_options.append({"index": 11, "message": "Sync from Fast Flag Configuration", "func": handleOption6, "include_go_to_roblox": True, "include_message": "Sync finished! Would you like to run Roblox now? (y/n)"})
+                    generated_ui_options.append({"index": 97, "message": "Sync to Fast Flag Configuration", "func": handleOption5, "include_go_to_roblox": True, "include_message": "Sync finished! Would you like to run Roblox now? (y/n)"})
+                    generated_ui_options.append({"index": 98, "message": "Sync from Fast Flag Configuration", "func": handleOption6, "include_go_to_roblox": True, "include_message": "Sync finished! Would you like to run Roblox now? (y/n)"})
 
                 generated_ui_options = sorted(generated_ui_options, key=lambda x: x["index"])
                 printWarnMessage("--- Main Menu ---")
@@ -1290,6 +1429,9 @@ if __name__ == "__main__":
                     handleOptionSelect()
                 elif ("credits" in url) or ("about" in url):
                     handleOption7()
+                    handleOptionSelect()
+                elif "mods" in url:
+                    handleOption11()
                     handleOptionSelect()
                 elif ("shortcuts/" in url):
                     handleOption10(url)
@@ -1388,8 +1530,15 @@ if __name__ == "__main__":
         current_roblox_version = handler.getCurrentClientVersion()
 
         if fflag_configuration.get("EFlagFreshCopyRoblox") == True:
-            printWarnMessage("--- Installing Latest Roblox Version ---")
-            handler.installRoblox(debug=(fflag_configuration.get("EFlagEnableDebugMode") == True))
+            if main_os == "Windows":
+                if (multi_instance_enabled == True or fflag_configuration.get("EFlagEnableDuplicationOfClients") == True) and handler.getIfRobloxIsOpen():
+                    printMainMessage("Skipping Roblox Reinstall due to Multi-Instancing enabled.")
+                else:
+                    printWarnMessage("--- Installing Latest Roblox Version ---")
+                    handler.installRoblox(forceQuit=True, debug=(fflag_configuration.get("EFlagEnableDebugMode") == True))
+            else:
+                printWarnMessage("--- Installing Latest Roblox Version ---")
+                handler.installRoblox(forceQuit=False, debug=(fflag_configuration.get("EFlagEnableDebugMode") == True))
             time.sleep(3)
         elif latest_roblox_version["success"] == True and current_roblox_version["success"] == True:
             if current_roblox_version["isClientVersion"] == True:
@@ -1397,14 +1546,14 @@ if __name__ == "__main__":
                     printMainMessage("Running latest version of Roblox!")
                 else:
                     printWarnMessage("--- Installing Latest Roblox Version ---")
-                    handler.installRoblox(debug=(fflag_configuration.get("EFlagEnableDebugMode") == True))
+                    handler.installRoblox(forceQuit=main_os == "Windows", debug=(fflag_configuration.get("EFlagEnableDebugMode") == True))
                     time.sleep(3)
             else:
                 if current_roblox_version["version"] == latest_roblox_version["short_version"]:
                     printMainMessage("Running latest version of Roblox!")
                 else:
                     printWarnMessage("--- Installing Latest Roblox Version ---")
-                    handler.installRoblox(debug=(fflag_configuration.get("EFlagEnableDebugMode") == True))
+                    handler.installRoblox(forceQuit=main_os == "Windows", debug=(fflag_configuration.get("EFlagEnableDebugMode") == True))
                     time.sleep(3)
         else:
             printErrorMessage("There was an issue while checking for updates.")
@@ -1474,13 +1623,14 @@ if __name__ == "__main__":
     def prepareRoblox():
         global fflag_configuration
         if handler.getIfRobloxIsOpen():
-            if main_os == "Windows" and not (multi_instance_enabled == True or len(given_args) > 1):
-                if os.path.exists(os.path.join(f"{os.getenv('LOCALAPPDATA')}", "EfazRobloxBootstrap", "EfazRobloxBootstrap.exe")):
-                    handler.endRoblox()
-                    time.sleep(2)
-            else:
-                printYellowMessage("Roblox is currently open which prevents file changing by Windows or the hard drive's file system.")
-                return
+            if main_os == "Windows":
+                if not (multi_instance_enabled == True or len(given_args) > 1):
+                    printYellowMessage("Roblox is currently open which prevents file changing by Windows or the hard drive's file system.")
+                    return
+                else:
+                    if os.path.exists(os.path.join(f"{os.getenv('LOCALAPPDATA')}", "EfazRobloxBootstrap", "EfazRobloxBootstrap.exe")):
+                        handler.endRoblox()
+                        time.sleep(2)
 
         if fflag_configuration.get("EFlagRemoveBuilderFont") == True or (fflag_configuration.get("EFlagEnableNewFontNameMappingABTest2") and fflag_configuration.get("EFlagEnableNewFontNameMappingABTest2").lower() == "false"):
             printMainMessage("Changing Font Files..")
@@ -1495,27 +1645,17 @@ if __name__ == "__main__":
             printSuccessMessage("Successfully changed Builder San files to GothamSSm!")
         
         if fflag_configuration.get("EFlagEnableModModes") == True:
-            if fflag_configuration.get("EFlagSelectedModMode") and os.path.exists(os.path.join(os.path.curdir, "ModModes", fflag_configuration.get("EFlagSelectedModMode"))):
-                printMainMessage("Applying Mods..")
-                if main_os == "Windows":
-                    shutil.copytree(f"{os.path.curdir}\\ModModes\\{fflag_configuration['EFlagSelectedModMode']}\\", f"{stored_content_folder_destinations[found_platform]}\\", dirs_exist_ok=True)
-                elif main_os == "Darwin":
-                    shutil.copytree(f"{os.path.curdir}/ModModes/{fflag_configuration['EFlagSelectedModMode']}/", f"{stored_content_folder_destinations[found_platform]}/", dirs_exist_ok=True)
-                printSuccessMessage("Successfully changed unmodded files to mod mode!")
-            else:
-                printMainMessage("Applying Mods..")
-                if main_os == "Windows":
-                    shutil.copytree(f"{os.path.curdir}\\ModModes\\Original\\", f"{stored_content_folder_destinations[found_platform]}\\", dirs_exist_ok=True)
-                elif main_os == "Darwin":
-                    shutil.copytree(f"{os.path.curdir}/ModModes/Original/", f"{stored_content_folder_destinations[found_platform]}/", dirs_exist_ok=True)
-                printSuccessMessage("Successfully changed modded files to original!")
-        else:
             printMainMessage("Applying Mods..")
-            if main_os == "Windows":
-                shutil.copytree(f"{os.path.curdir}\\ModModes\\Original\\", f"{stored_content_folder_destinations[found_platform]}\\", dirs_exist_ok=True)
-            elif main_os == "Darwin":
-                shutil.copytree(f"{os.path.curdir}/ModModes/Original/", f"{stored_content_folder_destinations[found_platform]}/", dirs_exist_ok=True)
-            printSuccessMessage("Successfully changed modded files to original!")
+            for i in fflag_configuration.get("EFlagEnabledMods", []):
+                mod_path = os.path.join("./Mods/", i)
+                if os.path.exists(mod_path) and os.path.isdir(mod_path):
+                    def ignore_files_here(dir, files): return set(["ModScript.py", "Manifest.json"]) & set(files)
+                    if main_os == "Windows":
+                        shutil.copytree(mod_path, f"{stored_content_folder_destinations[found_platform]}\\", dirs_exist_ok=True, ignore=ignore_files_here)
+                    elif main_os == "Darwin":
+                        shutil.copytree(mod_path, f"{stored_content_folder_destinations[found_platform]}/", dirs_exist_ok=True, ignore=ignore_files_here)
+                    printDebugMessage(f'Successfully applied "{i}" mod!')
+            printSuccessMessage("Successfully applied all enabled mods!")
 
         if fflag_configuration.get("EFlagEnableChangeAvatarEditorBackground") == True:
             printMainMessage("Changing Current Avatar Editor to Set Avatar Background..")
@@ -1659,13 +1799,13 @@ if __name__ == "__main__":
     mod_mode_module = None
     mod_mode_json = None
     if fflag_configuration.get("EFlagEnableModModes") == True:
-        if fflag_configuration.get("EFlagSelectedModMode") and not (fflag_configuration.get("EFlagAllowActivityTracking") == False) and fflag_configuration.get("EFlagEnableModModeScripts") == True and os.path.exists(os.path.join(os.path.curdir, "ModModes", fflag_configuration.get("EFlagSelectedModMode"), "ModScript.py")):
-            if os.path.exists(os.path.join(os.path.curdir, "ModModes", fflag_configuration.get("EFlagSelectedModMode"), "Manifest.json")):
-                mod_mode_json = readJSONFile(f"./ModModes/{fflag_configuration.get('EFlagSelectedModMode')}/Manifest.json")
+        if fflag_configuration.get("EFlagSelectedModMode") and not (fflag_configuration.get("EFlagAllowActivityTracking") == False) and fflag_configuration.get("EFlagEnableModModeScripts") == True and os.path.exists(os.path.join(os.path.curdir, "Mods", fflag_configuration.get("EFlagSelectedModMode"), "ModScript.py")):
+            if os.path.exists(os.path.join(os.path.curdir, "Mods", fflag_configuration.get("EFlagSelectedModMode"), "Manifest.json")):
+                mod_mode_json = readJSONFile(f"./Mods/{fflag_configuration.get('EFlagSelectedModMode')}/Manifest.json")
                 if mod_mode_json:
                     if mod_mode_json.get("mod_script") == True:
                         printMainMessage("Preparing Mod Mode Script..")
-                        with open(os.path.join(os.path.curdir, "ModModes", fflag_configuration.get("EFlagSelectedModMode"), "ModScript.py"), "r") as f:
+                        with open(os.path.join(os.path.curdir, "Mods", fflag_configuration.get("EFlagSelectedModMode"), "ModScript.py"), "r") as f:
                             mod_mode_script_text = f.read()
                         approved_items_list = fflag_configuration.get("EFlagModModeAllowedDetectments")
                         approved_through_scan = True
@@ -1681,8 +1821,8 @@ if __name__ == "__main__":
                         if "MacOSNotification" in mod_mode_script_text:
                             if not ("macNotification" in approved_items_list):
                                 approved_through_scan = False
-                        if "ModModes" in mod_mode_script_text:
-                            if not ("configureModModes" in approved_items_list):
+                        if "Mods" in mod_mode_script_text:
+                            if not ("configureMods" in approved_items_list):
                                 approved_through_scan = False
                         if "RobloxBrand" in mod_mode_script_text:
                             if not ("configureRobloxBranding" in approved_items_list):
@@ -1699,7 +1839,7 @@ if __name__ == "__main__":
 
                         if approved_through_scan == True:
                             printDebugMessage("Connecting to mod mode script..")
-                            script_path = os.path.join(os.path.curdir, "ModModes", fflag_configuration.get("EFlagSelectedModMode"), "ModScript.py")
+                            script_path = os.path.join(os.path.curdir, "Mods", fflag_configuration.get("EFlagSelectedModMode"), "ModScript.py")
                             try:
                                 spec = importlib.util.spec_from_file_location("ModScript", script_path)
                                 mod_mode_module = importlib.util.module_from_spec(spec)
@@ -2039,7 +2179,7 @@ if __name__ == "__main__":
                                                         "url": thumbnail_url
                                                     },
                                                     "footer": {
-                                                        "text": "Made by @EfazDev",
+                                                        "text": f"Made by @EfazDev | PID: {connected_roblox_instance.pid}" if fflag_configuration.get("EFlagDiscordWebhookShowPidInFooter") == True else "Made by @EfazDev",
                                                         "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
                                                     },
                                                     "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -2190,7 +2330,7 @@ if __name__ == "__main__":
                                     "url": thumbnail_url
                                 },
                                 "footer": {
-                                    "text": "Made by @EfazDev",
+                                    "text": f"Made by @EfazDev | PID: {connected_roblox_instance.pid}" if fflag_configuration.get("EFlagDiscordWebhookShowPidInFooter") == True else "Made by @EfazDev",
                                     "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
                                 },
                                 "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -2314,7 +2454,7 @@ if __name__ == "__main__":
                                         "url": thumbnail_url
                                     },
                                     "footer": {
-                                        "text": "Made by @EfazDev",
+                                        "text": f"Made by @EfazDev | PID: {connected_roblox_instance.pid}" if fflag_configuration.get("EFlagDiscordWebhookShowPidInFooter") == True else "Made by @EfazDev",
                                         "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
                                     },
                                     "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -2390,7 +2530,7 @@ if __name__ == "__main__":
                                 "url": thumbnail_url
                             },
                             "footer": {
-                                "text": "Made by @EfazDev",
+                                "text": f"Made by @EfazDev | PID: {connected_roblox_instance.pid}" if fflag_configuration.get("EFlagDiscordWebhookShowPidInFooter") == True else "Made by @EfazDev",
                                 "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
                             },
                             "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -2449,7 +2589,7 @@ if __name__ == "__main__":
                                 "url": thumbnail_url
                             },
                             "footer": {
-                                "text": "Made by @EfazDev",
+                                "text": f"Made by @EfazDev | PID: {connected_roblox_instance.pid}" if fflag_configuration.get("EFlagDiscordWebhookShowPidInFooter") == True else "Made by @EfazDev",
                                 "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
                             },
                             "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -2509,7 +2649,7 @@ if __name__ == "__main__":
                                 "url": thumbnail_url
                             },
                             "footer": {
-                                "text": "Made by @EfazDev",
+                                "text": f"Made by @EfazDev | PID: {connected_roblox_instance.pid}" if fflag_configuration.get("EFlagDiscordWebhookShowPidInFooter") == True else "Made by @EfazDev",
                                 "icon_url": "https://cdn.efaz.dev/cdn/png/logo.png"
                             },
                             "timestamp": datetime.datetime.now(tz=datetime.UTC).strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -2528,8 +2668,8 @@ if __name__ == "__main__":
                     printErrorMessage("There was an issue sending your webhook message. Is the webhook link valid?")
     def onAllRobloxEvents(data):
         if fflag_configuration.get("EFlagEnableModModes") == True:
-            if fflag_configuration.get("EFlagSelectedModMode") and fflag_configuration.get("EFlagEnableModModeScripts") == True and os.path.exists(os.path.join(os.path.curdir, "ModModes", fflag_configuration.get("EFlagSelectedModMode"), "ModScript.py")):
-                if os.path.exists(os.path.join(os.path.curdir, "ModModes", fflag_configuration.get("EFlagSelectedModMode"), "Manifest.json")):
+            if fflag_configuration.get("EFlagSelectedModMode") and fflag_configuration.get("EFlagEnableModModeScripts") == True and os.path.exists(os.path.join(os.path.curdir, "Mods", fflag_configuration.get("EFlagSelectedModMode"), "ModScript.py")):
+                if os.path.exists(os.path.join(os.path.curdir, "Mods", fflag_configuration.get("EFlagSelectedModMode"), "Manifest.json")):
                     if mod_mode_json:
                         if mod_mode_json.get("mod_script") == True:
                             try:

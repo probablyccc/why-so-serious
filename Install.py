@@ -29,7 +29,7 @@ def copy_with_symlinks(src, dest, ignore_files=[]):
             return
     if os.path.lexists(dest):
         if os.path.isdir(dest) and not os.path.islink(dest):
-            shutil.rmtree(dest)
+            pass
         else:
             os.remove(dest)
     if os.path.islink(src):
@@ -49,8 +49,8 @@ if __name__ == "__main__":
         "Darwin": ["/Applications/EfazRobloxBootstrap.app", "/Applications/EfazRobloxBootstrapLoader.app", "/Applications/Play Roblox.app"],
         "Windows": [os.path.join(f"{os.getenv('LOCALAPPDATA')}", "EfazRobloxBootstrap"), os.path.join(f"{os.getenv('LOCALAPPDATA')}", "EfazRobloxBootstrap", "EfazRobloxBootstrap.exe"), os.path.join(f"{os.getenv('LOCALAPPDATA')}", "EfazRobloxBootstrap")]
     }
-    ignore_files = ["build", "__pycache__", "LICENSE", "README.md", "InstallPython.sh", "FastFlagConfiguration.json", ".git", "Template"]
-    current_version = {"version": "1.2.2"}
+    ignore_files = ["build", "__pycache__", "LICENSE", "README.md", "InstallPython.sh", "FastFlagConfiguration.json", ".git"]
+    current_version = {"version": "1.2.3"}
     instant_install = False
     silent_mode = False
     disable_remove_other_operating_systems = False
@@ -135,6 +135,7 @@ if __name__ == "__main__":
             import pypresence
             if main_os == "Darwin":
                 import posix_ipc
+                import objc
             elif main_os == "Windows":
                 import win32com.client
         except Exception as e:
@@ -142,7 +143,7 @@ if __name__ == "__main__":
             if instant_install == True or isYes(input("> ")) == True:
                 pip_class.install(["requests", "plyer", "pypresence"])
                 if main_os == "Darwin":
-                    pip_class.install(["posix-ipc"])
+                    pip_class.install(["posix-ipc", "pyobjc"])
                 elif main_os == "Windows":
                     pip_class.install(["pywin32"])
                 printSuccessMessage("Successfully installed modules!")
@@ -215,6 +216,26 @@ if __name__ == "__main__":
                             shutil.rmtree("/Applications/EfazRobloxBootstrapLoader.app/Contents/Frameworks/")
                         if os.path.exists("/Applications/Play Roblox.app/Contents/Frameworks/"):
                             shutil.rmtree("/Applications/Play Roblox.app/Contents/Frameworks/")
+
+                    # Convert All Mod Modes to Mods
+                    if os.path.exists("./ModModes/"):
+                        printMainMessage("Converting Mod Modes to Mods..")
+                        for i in os.listdir("./ModModes/"):
+                            mod_mode_path = os.path.join("./ModModes/", i)
+                            if os.path.isdir(mod_mode_path):
+                                if not os.path.exists(f"./Mods/{i}/"):
+                                    os.makedirs(f"./Mods/{i}/", exist_ok=True)
+                                shutil.copytree(mod_mode_path, f"./Mods/{i}/", dirs_exist_ok=True)
+                        shutil.rmtree("./ModModes/")
+                    if os.path.exists("/Applications/EfazRobloxBootstrap.app/Contents/Resources/ModModes/"):
+                        printMainMessage("Converting Mod Modes to Mods..")
+                        for i in os.listdir("/Applications/EfazRobloxBootstrap.app/Contents/Resources/ModModes/"):
+                            mod_mode_path = os.path.join("/Applications/EfazRobloxBootstrap.app/Contents/Resources/ModModes/", i)
+                            if os.path.isdir(mod_mode_path):
+                                if not os.path.exists(f"/Applications/EfazRobloxBootstrap.app/Contents/Resources/Mods/{i}/"):
+                                    os.makedirs(f"/Applications/EfazRobloxBootstrap.app/Contents/Resources/Mods/{i}/", exist_ok=True)
+                                shutil.copytree(mod_mode_path, f"/Applications/EfazRobloxBootstrap.app/Contents/Resources/Mods/{i}/", dirs_exist_ok=True)
+                        shutil.rmtree("/Applications/EfazRobloxBootstrap.app/Contents/Resources/ModModes/")
                     
                     # Install to /Applications/
                     printMainMessage("Installing to Applications Folder..")
@@ -294,6 +315,26 @@ if __name__ == "__main__":
                             shutil.rmtree("./Apps/EfazRobloxBootstrap32/")
                             deleted_other_os = True
                     if deleted_other_os == True: printMainMessage("To help save space, the script has automatically deleted files made for other operating systems!")
+
+                # Convert All Mod Modes to Mods
+                if os.path.exists("./ModModes/"):
+                    printMainMessage("Converting Mod Modes to Mods..")
+                    for i in os.listdir("./ModModes/"):
+                        mod_mode_path = os.path.join("./ModModes/", i)
+                        if os.path.isdir(mod_mode_path):
+                            if not os.path.exists(f"./Mods/{i}/"):
+                                os.makedirs(f"./Mods/{i}/", exist_ok=True)
+                            shutil.copytree(mod_mode_path, f"./Mods/{i}/", dirs_exist_ok=True)
+                    shutil.rmtree("./ModModes/")
+                if os.path.exists(stored_main_app[found_platform][0]):
+                    printMainMessage("Converting Mod Modes to Mods..")
+                    for i in os.listdir(os.path.join(stored_main_app[found_platform][0], "ModModes")):
+                        mod_mode_path = os.path.join(os.path.join(stored_main_app[found_platform][0], "ModModes"), i)
+                        if os.path.isdir(mod_mode_path):
+                            if not os.path.exists(os.path.join(stored_main_app[found_platform][0], "Mods", i)):
+                                os.makedirs(os.path.join(stored_main_app[found_platform][0], "Mods", i), exist_ok=True)
+                            shutil.copytree(mod_mode_path, os.path.join(stored_main_app[found_platform][0], "Mods", i), dirs_exist_ok=True)
+                    shutil.rmtree(os.path.join(stored_main_app[found_platform][0], "ModModes"))
 
                 # Copy Apps
                 printMainMessage("Creating paths..")

@@ -1251,7 +1251,7 @@ if __name__ == "__main__":
         printErrorMessage("Please run this script on macOS/Windows.")
         exit()
     printWarnMessage("Made by Efaz from efaz.dev!")
-    printWarnMessage("v1.4.1")
+    printWarnMessage("v1.4.2")
     printWarnMessage("-----------")
     printWarnMessage("Entering Setup..")
     if main_os == "Windows":
@@ -1344,7 +1344,12 @@ if __name__ == "__main__":
             printMainMessage("Would you like the Roblox FPS Unlocker in your settings? (This may not work depending on your Roblox client version.) (y/n)")
             robloxFPSUnlocker = input("> ")
             if isYes(robloxFPSUnlocker) == True:
-                generated_json["FFlagGameBasicSettingsFramerateCap5"] = "true"
+                generated_json["FFlagGameBasicSettingsFramerateCap5"] = "true" # If roblox decides to change, I won't need to :)
+                generated_json["FFlagGameBasicSettingsFramerateCap6"] = "true"
+                generated_json["FFlagGameBasicSettingsFramerateCap7"] = "true"
+                generated_json["FFlagGameBasicSettingsFramerateCap8"] = "true"
+                generated_json["FFlagGameBasicSettingsFramerateCap9"] = "true"
+                generated_json["FFlagGameBasicSettingsFramerateCap10"] = "true" # If roblox decides to change, I won't need to :)
                 generated_json["DFIntTaskSchedulerTargetFps"] = 0
             elif isRequestClose(robloxFPSUnlocker) == True:
                 printMainMessage("Ending installation..")
@@ -1424,6 +1429,19 @@ if __name__ == "__main__":
         elif isNo(installRemoveAds) == True:
             generated_json["FFlagAdServiceEnabled"] = "true"
 
+        # Increase Max Assets Loading
+        printWarnMessage("--- Increase Max Assets Loading ---")
+        printMainMessage("Would you like to increase the limit on Max Assets loading from 100 to 1,000? (this will make loading into games faster depending on your computer) (y/n)")
+        printYellowMessage("WARNING! This can crash your Roblox session!")
+        installRemoveMaxAssets = input("> ")
+        if isYes(installRemoveMaxAssets) == True:
+            generated_json["DFIntNumAssetsMaxToPreload"] = "1000"
+        elif isRequestClose(installRemoveMaxAssets) == True:
+            printMainMessage("Ending installation..")
+            exit()
+        elif isNo(installRemoveMaxAssets) == True:
+            generated_json["DFIntNumAssetsMaxToPreload"] = "100"
+
         # Enable Genre System
         printWarnMessage("--- Enable New Genre System Under Making ---")
         printMainMessage("Would you like to enable the new genre system in beta? (y/n)")
@@ -1462,6 +1480,18 @@ if __name__ == "__main__":
             generated_json["FFlagEnablePreferredTextSizeScale"] = "false"
             generated_json["FFlagEnablePreferredTextSizeSettingInMenus2"] = "false"
 
+        # Remove Automatically Translated
+        printWarnMessage("--- Remove Automatically Translated ---")
+        printMainMessage("Would you like to remove the chat automatically translated message in the chat? (y/n)")
+        installRemoveAutoTranslate = input("> ")
+        if isYes(installRemoveAutoTranslate) == True:
+            generated_json["FFlagChatTranslationEnableSystemMessage"] = "false"
+        elif isRequestClose(installRemoveAutoTranslate) == True:
+            printMainMessage("Ending installation..")
+            exit()
+        elif isNo(installRemoveAutoTranslate) == True:
+            generated_json["FFlagChatTranslationEnableSystemMessage"] = "true"
+
         # Darker Mode
         printWarnMessage("--- Darker Mode ---")
         printMainMessage("Would you like to enable Darker mode on your client? (y/n)")
@@ -1476,17 +1506,17 @@ if __name__ == "__main__":
             generated_json["FFlagLuaAppUseUIBloxColorPalettes1"] = "false"
             generated_json["FFlagUIBloxUseNewThemeColorPalettes"] = "false"
 
-            # Blue Mode
-            # printWarnMessage("--- Blue Mode ---")
-            # printMainMessage("Would you like to enable the original Blue theme on the client? (y/n)")
-            # installBlueTheme = input("> ")
-            # if isYes(installBlueTheme) == True:
-            #     generated_json["FFlagLuaAppEnableFoundationColors"] = "true"
-            # elif isRequestClose(installBlueTheme) == True:
-            #     printMainMessage("Ending installation..")
-            #     exit()
-            # elif isNo(installBlueTheme) == True:
-            #     generated_json["FFlagLuaAppEnableFoundationColors"] = "false"
+        # Blue Foundation Colors
+        printWarnMessage("--- Blue Foundation Colors ---")
+        printMainMessage("Would you like to enable new blue foundation colors on the Roblox client? (y/n)")
+        installBlueColors = input("> ")
+        if isYes(installBlueColors) == True:
+            generated_json["FFlagLuaAppEnableFoundationColors3"] = "true"
+        elif isRequestClose(installBlueColors) == True:
+            printMainMessage("Ending installation..")
+            exit()
+        elif isNo(installBlueColors) == True:
+            generated_json["FFlagLuaAppEnableFoundationColors3"] = "false"
 
         # Custom Disconnect Message
         printWarnMessage("--- Custom Disconnect Message ---")

@@ -17,23 +17,24 @@
 </p>
 
 ## What is this?
-Efaz's Roblox Bootstrap is a program inspired by Bloxstrap made for macOS and Windows! It also uses [Activity Tracking](https://github.com/pizzaboxer/bloxstrap/wiki/What-is-activity-tracking%3F), supports [BloxstrapRPC](https://github.com/pizzaboxer/bloxstrap/wiki/Integrating-Bloxstrap-functionality-into-your-game) and lot more!
+Efaz's Roblox Bootstrap is a Python program heavily inspired by Bloxstrap made for macOS and Windows! It also uses [Activity Tracking](https://github.com/pizzaboxer/bloxstrap/wiki/What-is-activity-tracking%3F), supports [BloxstrapRPC](https://github.com/pizzaboxer/bloxstrap/wiki/Integrating-Bloxstrap-functionality-into-your-game) and lot more!
 
 ## Features
 1. Set FFlag Customizations on your Roblox installation!
-2. Set a custom Avatar Map, App Icon, Cursor, Mod Mode, and Death Sound!
-3. Use multiple instances directly by launching from your default web browser or the EfazRobloxBootstrap app!
-4. Get server locations when joining (also uses ipinfo.io like Bloxstrap)
-5. Discord Rich Presences [Includes Support for BloxstrapRPC]
-6. Discord Webhooks [Join, Disconnect, Teleport, Crash, App Start, App Close Notifications]
-7. Run Python Scripts based on events ran on the Roblox client using Mod Mode Scripts!
-8. Play Roblox app so you can run Roblox directly!
-9. Read Logs from Roblox using RobloxFastFlagsInstaller and Debug Mode!
+2. Set a custom Avatar Map, App Icon, Cursor, and Death Sound!
+3. Customize with unlimited mods that you can download and insert an extracted folder copy into the Mods folder! *[Requires to go through bootstrap in Mods Manager]
+4. Use multiple instances directly by launching from your default web browser or the EfazRobloxBootstrap app!
+5. Get server locations when joining (also uses ipinfo.io like Bloxstrap)
+6. Discord Rich Presences [Includes Support for BloxstrapRPC]
+7. Discord Webhooks [Join, Disconnect, Teleport, Crash, App Start, App Close Notifications]
+8. Run Python Scripts based on events ran on the Roblox client using Mod Mode Scripts! *[One script limit]
+9. Play Roblox app so you can run Roblox directly!
+10. Read Logs from Roblox using RobloxFastFlagsInstaller and Debug Mode!
 
 ## Requirements
 1. [Full ZIP file](https://github.com/EfazDev/roblox-bootstrap/archive/refs/heads/main.zip)
-2. [Python 3.10+](https://www.python.org/downloads/) (You may install Python 3.13.0 from InstallPython.sh)
-3. Python Modules: pip install pypresence posix-ipc requests plyer (For Windows: pip install pypresence requests pywin32 plyer posix-ipc)
+2. [Python 3.10+](https://www.python.org/downloads/) (You may install Python 3.13.0 from InstallPython.bat (Windows) or from InstallPython.sh (macOS))
+3. Python Modules: pip install pypresence pyobjc posix-ipc requests plyer (For Windows: pip install pypresence requests pywin32 plyer posix-ipc)
 
 ## Install
 1. Once you got all the requirements, run Install.py
