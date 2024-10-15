@@ -326,7 +326,7 @@ if __name__ == "__main__":
                                 os.makedirs(f"./Mods/{i}/", exist_ok=True)
                             shutil.copytree(mod_mode_path, f"./Mods/{i}/", dirs_exist_ok=True)
                     shutil.rmtree("./ModModes/")
-                if os.path.exists(stored_main_app[found_platform][0]):
+                if os.path.exists(stored_main_app[found_platform][0], "ModModes"):
                     printMainMessage("Converting Mod Modes to Mods..")
                     for i in os.listdir(os.path.join(stored_main_app[found_platform][0], "ModModes")):
                         mod_mode_path = os.path.join(os.path.join(stored_main_app[found_platform][0], "ModModes"), i)
